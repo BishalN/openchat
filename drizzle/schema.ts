@@ -1,12 +1,10 @@
 import {
   integer,
   pgTable,
-  serial,
   text,
   timestamp,
-  json,
+  jsonb,
   pgEnum,
-  varchar,
   boolean,
   index,
   vector,
@@ -55,13 +53,12 @@ export const agentsTable = pgTable("agents", {
     .notNull()
     .$onUpdate(() => new Date()),
   isPublic: boolean("is_public").default(false),
-  config: json("config").$type<AgentConfig>().default({}),
+  config: jsonb("config").$type<AgentConfig>().default({}),
 }, (table) => [
   index("agentsUserIdIdx").on(table.userId),
 ]);
 
 export type FileSourceDetails = {
-  type: "file";
   fileUrl: string;
   fileSize?: number;
   mimeType?: string;
@@ -69,24 +66,20 @@ export type FileSourceDetails = {
 };
 
 export type TextSourceDetails = {
-  type: "text";
   content: string;
 };
 
 export type WebsiteSourceDetails = {
-  type: "website";
   url: string;
   title?: string;
   content: string;
 };
 
 export type QASourceDetails = {
-  type: "qa";
   pairs: Array<{ question: string; answer: string }>;
 };
 
 export type NotionSourceDetails = {
-  type: "notion";
   pageId: string;
   title?: string;
   content?: string;
@@ -106,7 +99,7 @@ export const sourcesTable = pgTable("sources", {
     .references(() => agentsTable.id, { onDelete: "cascade" }),
   type: sourceTypeEnum("type").notNull(),
   name: text("name").notNull(),
-  details: json("details").$type<SourceDetails>().notNull(),
+  details: jsonb("details").$type<SourceDetails>().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at")
     .notNull()
@@ -126,7 +119,7 @@ export const embeddingsTable = pgTable(
     content: text("content").notNull(),
     embedding: vector("embedding", { dimensions: 768 }),
     chunkIndex: integer("chunk_index"),
-    metadata: json("metadata").$type<Record<string, any>>(),
+    metadata: jsonb("metadata").$type<Record<string, any>>(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [

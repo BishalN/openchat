@@ -4,7 +4,6 @@ import {
   agentsTable,
   conversationsTable,
   sourcesTable,
-  qaPairsTable,
   type AgentConfig,
 } from "@/drizzle/schema";
 import { desc, eq, and } from "drizzle-orm";
@@ -26,7 +25,7 @@ export const agentRouter = createTRPCRouter({
   }),
 
   getById: protectedProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const [agent] = await ctx.db
         .select()
@@ -46,7 +45,7 @@ export const agentRouter = createTRPCRouter({
     }),
 
   getPublicAgentById: baseProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const [agent] = await ctx.db
         .select()
@@ -98,9 +97,11 @@ export const agentRouter = createTRPCRouter({
 
   generalUpdate: protectedProcedure
     .input(
-      updateAgentSchema
-        .pick({ id: true, name: true, creditLimit: true, isPublic: true })
-        .extend({ id: z.number({ required_error: "Id is required" }) })
+      z.object({
+        id: z.string().uuid(),
+        name: z.string().optional(),
+        isPublic: z.boolean().optional(),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const [agent] = await ctx.db
@@ -121,7 +122,6 @@ export const agentRouter = createTRPCRouter({
         .update(agentsTable)
         .set({
           name: input.name,
-          creditLimit: input.creditLimit,
           isPublic: input.isPublic,
         })
         .where(eq(agentsTable.id, input.id))
@@ -165,7 +165,7 @@ export const agentRouter = createTRPCRouter({
 
   // Delete an agent
   delete: protectedProcedure
-    .input(baseSelectSchema.pick({ id: true }))
+    .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [agent] = await ctx.db
         .select({ id: agentsTable.id })
@@ -188,7 +188,7 @@ export const agentRouter = createTRPCRouter({
     }),
 
   deleteAllConversations: protectedProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [agent] = await ctx.db
         .select({ id: agentsTable.id })
@@ -214,7 +214,7 @@ export const agentRouter = createTRPCRouter({
 
   // get all the sources given agent id
   getSources: protectedProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const [agent] = await ctx.db
         .select({ id: agentsTable.id })
@@ -236,41 +236,29 @@ export const agentRouter = createTRPCRouter({
           id: sourcesTable.id,
           type: sourcesTable.type,
           name: sourcesTable.name,
-          content: sourcesTable.content,
-          url: sourcesTable.url,
-          fileUrl: sourcesTable.fileUrl,
-          fileSize: sourcesTable.fileSize,
-          mimeType: sourcesTable.mimeType,
-          characterCount: sourcesTable.characterCount,
+          details: sourcesTable.details,
           createdAt: sourcesTable.createdAt,
           updatedAt: sourcesTable.updatedAt,
         })
         .from(sourcesTable)
         .where(eq(sourcesTable.agentId, input.id));
 
-      // TODO: Fix this For each source, fetch its QA pairs if the source type is 'qa'
-      const sourcesWithQA = await Promise.all(
-        sources.map(async (source) => {
-          if (source.type === "qa") {
-            const qaPairs = await ctx.db
-              .select({
-                id: qaPairsTable.id,
-                question: qaPairsTable.question,
-                answer: qaPairsTable.answer,
-                createdAt: qaPairsTable.createdAt,
-                updatedAt: qaPairsTable.updatedAt,
-              })
-              .from(qaPairsTable)
-              .where(eq(qaPairsTable.sourceId, source.id));
-
-            return {
-              ...source,
-              qaPairs,
-            };
-          }
-          return source;
-        })
-      );
+      // For each source, if type is 'qa', extract pairs from details using a type guard
+      const sourcesWithQA = sources.map((source) => {
+        if (
+          source.type === "qa" &&
+          source.details &&
+          typeof source.details === "object" &&
+          "pairs" in source.details &&
+          Array.isArray((source.details as any).pairs)
+        ) {
+          return {
+            ...source,
+            qaPairs: (source.details as any).pairs,
+          };
+        }
+        return source;
+      });
 
       return sourcesWithQA;
     }),

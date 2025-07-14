@@ -5,8 +5,8 @@ import { db } from "@/drizzle";
 import {
   agentsTable,
   sourcesTable,
-  qaPairsTable,
   type SelectSource,
+  FileSourceDetails,
 } from "@/drizzle/schema";
 import { createClient } from "@/utils/supabase/server";
 import { sourceStoreSchema } from "@/lib/validations/agent";
@@ -64,8 +64,9 @@ export const createAgent = authActionClient
                 agentId: agent.id,
                 type: "text",
                 name: text.name,
-                content: text.content,
-                characterCount: text.size,
+                details: {
+                  content: text.content,
+                }
               })
               .returning();
           }
@@ -79,9 +80,11 @@ export const createAgent = authActionClient
                   agentId: agent.id,
                   type: "file" as const,
                   name: f.name,
-                  fileUrl: f.fileUrl,
-                  fileSize: f.fileSize,
-                  mimeType: f.mimeType,
+                  details: {
+                    fileUrl: f.fileUrl,
+                    fileSize: f.fileSize,
+                    mimeType: f.mimeType,
+                  }
                 }))
               )
               .returning();
@@ -96,7 +99,12 @@ export const createAgent = authActionClient
                   agentId: agent.id,
                   type: "website" as const,
                   name: w.name,
-                  url: w.url,
+                  details: {
+                    url: w.url,
+                    // TODO: website content add later
+                    title: "add later",
+                    content: "add later",
+                  }
                 }))
               )
               .returning();
@@ -110,18 +118,11 @@ export const createAgent = authActionClient
                 agentId: agent.id,
                 type: "qa",
                 name: qa.name,
-                characterCount: qa.size,
+                details: {
+                  pairs: qa.qaPairs,
+                }
               })
               .returning();
-
-            // Insert QA pairs
-            await tx.insert(qaPairsTable).values(
-              qa.qaPairs.map((pair) => ({
-                sourceId: qaSource!.id,
-                question: pair.question,
-                answer: pair.answer,
-              }))
-            );
           }
 
           // Insert notion source
@@ -132,7 +133,12 @@ export const createAgent = authActionClient
                 agentId: agent.id,
                 type: "notion",
                 name: notion.name,
-                url: notion.url,
+                details: {
+                  pageId: notion.url,
+                  title: notion.name,
+                  // TODO: notion content add later
+                  content: "add later",
+                }
               })
               .returning();
           }
@@ -145,38 +151,40 @@ export const createAgent = authActionClient
               sources: {
                 text: textSource
                   ? {
-                      id: textSource.id,
-                      name: textSource.name,
-                      content: text!.content,
-                      size: text!.size,
-                    }
+                    id: textSource.id,
+                    name: textSource.name,
+                    content: text!.content,
+                  }
                   : null,
                 files: fileSource.map((f) => ({
                   id: f.id,
                   name: f.name,
-                  fileUrl: f.fileUrl!,
-                  mimeType: f.mimeType!,
-                  fileSize: f.fileSize ? f.fileSize : undefined,
+                  fileUrl: (f.details as FileSourceDetails).fileUrl,
+                  fileSize: (f.details as FileSourceDetails).fileSize,
+                  mimeType: (f.details as FileSourceDetails).mimeType,
                 })),
                 websites: websitesSource.map((w) => ({
                   id: w.id,
                   name: w.name,
-                  url: w.url!,
+                  url: "add later",
+                  content: "add later",
+                  title: "add later",
                 })),
                 qa: qaSource
                   ? {
-                      id: qaSource.id,
-                      name: qaSource.name,
-                      qaPairs: qa!.qaPairs,
-                      size: qa!.size,
-                    }
+                    id: qaSource.id,
+                    name: qaSource.name,
+                    pairs: qa!.qaPairs,
+                  }
                   : null,
                 notion: notionSource
                   ? {
-                      id: notionSource.id,
-                      name: notionSource.name,
-                      url: notionSource.url!,
-                    }
+                    id: notionSource.id,
+                    name: notionSource.name,
+                    pageId: "add later",
+                    title: "add later",
+                    content: "add later",
+                  }
                   : null,
               },
             },

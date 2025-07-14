@@ -1,5 +1,5 @@
 {
-  "id": "7c9eb8d6-5c17-4b95-8821-ab925425f233",
+  "id": "ef83363d-1481-4815-bd11-da4acd12f5c8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -55,10 +55,10 @@
         },
         "config": {
           "name": "config",
-          "type": "json",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false,
-          "default": "'{}'::json"
+          "default": "'{}'::jsonb"
         }
       },
       "indexes": {
@@ -245,7 +245,7 @@
         },
         "metadata": {
           "name": "metadata",
-          "type": "json",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -477,7 +477,7 @@
         },
         "details": {
           "name": "details",
-          "type": "json",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },

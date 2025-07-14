@@ -26,7 +26,6 @@ export async function GET(request: Request) {
             email: data.user.email || "",
             createdAt: new Date(),
             updatedAt: new Date(),
-            credits: 5, // Start with 5 credits
           })
           .onConflictDoUpdate({
             target: profilesTable.id,

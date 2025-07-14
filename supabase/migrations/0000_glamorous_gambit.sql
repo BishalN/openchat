@@ -1,11 +1,5 @@
 CREATE TYPE "public"."agent_role" AS ENUM('user', 'assistant', 'system');--> statement-breakpoint
 CREATE TYPE "public"."source_type" AS ENUM('file', 'text', 'website', 'qa', 'notion');--> statement-breakpoint
-drop table if exists "sources";
-drop table if exists "conversations";
-drop table if exists "embeddings";
-drop table if exists "messages";
-drop table if exists "profiles";
-drop table if exists "agents";
 
 
 CREATE TABLE "agents" (
@@ -16,7 +10,7 @@ CREATE TABLE "agents" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL,
 	"is_public" boolean DEFAULT false,
-	"config" json DEFAULT '{}'::json
+	"config" jsonb DEFAULT '{}'::jsonb
 );
 --> statement-breakpoint
 CREATE TABLE "conversations" (
@@ -34,7 +28,7 @@ CREATE TABLE "embeddings" (
 	"content" text NOT NULL,
 	"embedding" vector(768),
 	"chunk_index" integer,
-	"metadata" json,
+	"metadata" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -61,7 +55,7 @@ CREATE TABLE "sources" (
 	"agent_id" uuid NOT NULL,
 	"type" "source_type" NOT NULL,
 	"name" text NOT NULL,
-	"details" json NOT NULL,
+	"details" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp NOT NULL
 );
