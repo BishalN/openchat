@@ -110,11 +110,12 @@ export default function PlaygroundPage() {
     handleSubmit: handleChatSubmit,
     error: chatError,
     status: chatStatus,
+    metadata,
+    data,
   } = useChat({
     api: "/api/chat",
     body: {
-      agentId: Number(agentId),
-      stream: true,
+      agentId: agentId,
       //TODO: Hmm thats why a good idea for a client to give back a uuid type backend
       // conversationId: null,
       // Include optional conversationId to save conversation history
@@ -128,6 +129,9 @@ export default function PlaygroundPage() {
       },
     ],
   });
+
+  console.log('metadata:', JSON.stringify(metadata, null, 2))
+  console.log('data:', JSON.stringify(data, null, 2))
 
   // Show chat error if any
   useEffect(() => {
@@ -358,11 +362,10 @@ export default function PlaygroundPage() {
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.role === "user"
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : "bg-gray-100 dark:bg-gray-800"
-                  }`}
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === "user"
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "bg-gray-100 dark:bg-gray-800"
+                    }`}
                 >
                   {message.parts.map((part, i) => {
                     switch (part.type) {

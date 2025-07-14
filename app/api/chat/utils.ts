@@ -55,7 +55,7 @@ export async function handleConversation(
     const [newConversation] = await db
       .insert(conversationsTable)
       .values({
-        agentId: parseInt(agentId),
+        agentId: agentId,
         userId: userId,
         title: message.content.substring(0, 50) + "...",
         createdAt: new Date(),
@@ -72,8 +72,8 @@ export async function handleConversation(
     .from(conversationsTable)
     .where(
       and(
-        eq(conversationsTable.id, parseInt(existingId)),
-        eq(conversationsTable.agentId, parseInt(agentId))
+        eq(conversationsTable.id, existingId),
+        eq(conversationsTable.agentId, agentId)
       )
     )
     .limit(1);
@@ -83,7 +83,7 @@ export async function handleConversation(
     await db
       .update(conversationsTable)
       .set({ updatedAt: new Date() })
-      .where(eq(conversationsTable.id, parseInt(existingId)));
+      .where(eq(conversationsTable.id, existingId));
 
     return existingId;
   }
@@ -92,9 +92,9 @@ export async function handleConversation(
   const [newConversation] = await db
     .insert(conversationsTable)
     .values({
-      agentId: parseInt(agentId),
+      agentId: agentId,
       userId: userId,
-      id: parseInt(existingId),
+      id: existingId,
       title: message.content.substring(0, 50) + "...",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -110,12 +110,9 @@ export async function storeMessage(
   content: string
 ) {
   await db.insert(messagesTable).values({
-    conversationId: parseInt(conversationId),
-    role,
+    conversationId: conversationId,
+    role: role as "user" | "assistant" | "system",
     content,
     createdAt: new Date(),
   });
 }
-
-
-

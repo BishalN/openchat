@@ -1,34 +1,11 @@
-import { embed, embedMany } from "ai";
+import { embed } from "ai";
 import { google } from "@ai-sdk/google";
 import { and, cosineDistance, desc, eq, gt, sql } from "drizzle-orm";
 import { embeddingsTable, sourcesTable } from "@/drizzle/schema";
 import { db } from "@/drizzle";
-import { lmstudio } from "@/app/api/chat/utils";
 
 const embeddingModel = google.textEmbeddingModel("text-embedding-004");
 
-// const lmEmbeddingModel = lmstudio.textEmbeddingModel('text-embedding-mxbai-embed-large-v1',{
-//   dimensions: 768,
-// });
-
-const generateChunks = (input: string): string[] => {
-  return input
-    .trim()
-    .split(".")
-    .filter((i) => i !== "");
-};
-
-export const generateEmbeddings = async (
-  value: string
-): Promise<Array<{ embedding: number[]; content: string }>> => {
-  const chunks = generateChunks(value);
-  const { embeddings } = await embedMany({
-    model: embeddingModel,
-    // model: lmEmbeddingModel,
-    values: chunks,
-  });
-  return embeddings.map((e, i) => ({ content: chunks[i], embedding: e }));
-};
 
 export const generateEmbedding = async (value: string): Promise<number[]> => {
   const input = value.replaceAll("\\n", " ");
@@ -41,7 +18,7 @@ export const generateEmbedding = async (value: string): Promise<number[]> => {
 
 export const findRelevantContent = async (
   userQuery: string,
-  agentId: number
+  agentId: string
 ) => {
   // Generate embedding for the user query
   const userQueryEmbedded = await generateEmbedding(userQuery);
@@ -55,8 +32,14 @@ export const findRelevantContent = async (
   // Query for relevant content from this specific agent only
   const similarContent = await db
     .select({
-      name: embeddingsTable.content,
-      similarity,
+      content: embeddingsTable.content,
+      confidence: similarity,
+      metadata: embeddingsTable.metadata,
+      chunkIndex: embeddingsTable.chunkIndex,
+      sourceId: embeddingsTable.sourceId,
+      sourceType: sourcesTable.type,
+      sourceName: sourcesTable.name,
+      sourceDetails: sourcesTable.details,
     })
     .from(embeddingsTable)
     .innerJoin(sourcesTable, eq(embeddingsTable.sourceId, sourcesTable.id))

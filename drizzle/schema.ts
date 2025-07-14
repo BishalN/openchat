@@ -157,6 +157,8 @@ export const messagesTable = pgTable("messages", {
   role: agentRoleEnum("role").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+
+  // TODO: add sources metadata used for this current message
 }, (table) => [
   index("messagesConversationIdIdx").on(table.conversationId),
 ]);
