@@ -1,0 +1,60 @@
+import { z } from "zod";
+
+// Base schemas for each source type
+export const textSourceSchema = z.object({
+  type: z.literal("text"),
+  content: z.string(),
+  name: z.string(),
+  size: z.number().int().positive(),
+});
+
+export const fileSourceSchema = z.object({
+  id: z.string(),
+  type: z.literal("file"),
+  name: z.string(),
+  fileUrl: z.string().url(),
+  fileSize: z.number().int().positive(),
+  mimeType: z.string(),
+  createdAt: z.number(),
+});
+
+export const websiteSourceSchema = z.object({
+  type: z.literal("website"),
+  name: z.string(),
+  url: z.string().url(),
+});
+
+export const qaPairSchema = z.object({
+  question: z.string(),
+  answer: z.string(),
+});
+
+export const qaSourceSchema = z.object({
+  type: z.literal("qa"),
+  name: z.string(),
+  qaPairs: z.array(qaPairSchema),
+  size: z.number().int().positive(),
+});
+
+export const notionSourceSchema = z.object({
+  type: z.literal("notion"),
+  name: z.string(),
+  url: z.string().url(),
+});
+
+// Main source store state schema
+export const sourceStoreSchema = z.object({
+  text: textSourceSchema.nullable(),
+  file: z.array(fileSourceSchema),
+  websites: z.array(websiteSourceSchema),
+  qa: qaSourceSchema.nullable(),
+  notion: notionSourceSchema.nullable(),
+});
+
+// If you want to infer types back from Zod
+export type SourceStore = z.infer<typeof sourceStoreSchema>;
+export type TextSource = z.infer<typeof textSourceSchema>;
+export type FileSource = z.infer<typeof fileSourceSchema>;
+export type WebsiteSource = z.infer<typeof websiteSourceSchema>;
+export type QASource = z.infer<typeof qaSourceSchema>;
+export type NotionSource = z.infer<typeof notionSourceSchema>;
