@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1744863769462,
-      "tag": "0000_tearful_nova",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1744872758466,
-      "tag": "0001_zippy_warbound",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1744956288251,
-      "tag": "0002_silent_sharon_ventura",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1744974145844,
-      "tag": "0003_worthless_dark_beast",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1745141108917,
-      "tag": "0004_boring_moondragon",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1745298365276,
-      "tag": "0005_nasty_blindfold",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1745298644699,
-      "tag": "0006_workable_earthquake",
+      "when": 1752473921657,
+      "tag": "0000_brainy_mad_thinker",
       "breakpoints": true
     }
   ]

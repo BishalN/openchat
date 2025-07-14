@@ -1,29 +1,29 @@
-CREATE TYPE "public"."source_type" AS ENUM('file', 'text', 'website', 'qa', 'notion');--> statement-breakpoint
-CREATE TABLE "agents" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"user_id" uuid NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL,
-	"is_public" boolean DEFAULT false,
-	"config" json DEFAULT '{}'::json
-);
---> statement-breakpoint
-CREATE TABLE "conversations" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"agent_id" integer NOT NULL,
-	"user_id" uuid NOT NULL,
-	"title" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp NOT NULL
-);
+-- CREATE TYPE "public"."source_type" AS ENUM('file', 'text', 'website', 'qa', 'notion');--> statement-breakpoint
+-- CREATE TABLE "agents" (
+-- 	"id" serial PRIMARY KEY NOT NULL,
+-- 	"name" text NOT NULL,
+-- 	"description" text,
+-- 	"user_id" uuid NOT NULL,
+-- 	"created_at" timestamp DEFAULT now() NOT NULL,
+-- 	"updated_at" timestamp NOT NULL,
+-- 	"is_public" boolean DEFAULT false,
+-- 	"config" json DEFAULT '{}'::json
+-- );
+-- --> statement-breakpoint
+-- CREATE TABLE "conversations" (
+-- 	"id" serial PRIMARY KEY NOT NULL,
+-- 	"agent_id" integer NOT NULL,
+-- 	"user_id" uuid NOT NULL,
+-- 	"title" text,
+-- 	"created_at" timestamp DEFAULT now() NOT NULL,
+-- 	"updated_at" timestamp NOT NULL
+-- );
 --> statement-breakpoint
 CREATE TABLE "embeddings" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"source_id" integer NOT NULL,
 	"content" text NOT NULL,
-	"embedding" vector(1536),
+	"embedding" vector(768),
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -79,8 +79,6 @@ CREATE TABLE "website_pages" (
 	"updated_at" timestamp NOT NULL
 );
 --> statement-breakpoint
-DROP TABLE "posts_table" CASCADE;--> statement-breakpoint
-DROP TABLE "users_table" CASCADE;--> statement-breakpoint
 ALTER TABLE "agents" ADD CONSTRAINT "agents_user_id_profiles_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_agent_id_agents_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."agents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_user_id_profiles_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
