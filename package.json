@@ -11,7 +11,8 @@
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
     "ingest": "npx inngest-cli@latest dev --no-poll",
-    "be": "__NEXT_TEST_MODE=true pnpm build"
+    "be": "__NEXT_TEST_MODE=true pnpm build",
+    "pkit:add": "node ./add-prompt-kit-component.js"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
@@ -55,6 +56,7 @@
     "inngest": "^3.35.0",
     "langchain": "^0.3.22",
     "lucide-react": "^0.468.0",
+    "marked": "^16.0.0",
     "nanoid": "^5.1.5",
     "next": "latest",
     "next-safe-action": "^7.10.5",
@@ -67,8 +69,11 @@
     "react-dom": "19.0.0",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.55.0",
+    "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "server-only": "^0.0.1",
+    "shiki": "^3.8.0",
     "sonner": "^2.0.3",
     "stripe": "^18.0.0",
     "superjson": "^2.2.2",

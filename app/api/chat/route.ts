@@ -108,6 +108,8 @@ export async function POST(req: Request) {
     console.log('messages:', JSON.stringify(messages, null, 2))
 
 
+    // use this to send custom data as metadata to client 
+    // https://ai-sdk.dev/docs/ai-sdk-ui/streaming-data
     const result = streamText({
       model: google("gemini-2.0-flash"),
       system: systemPrompt,

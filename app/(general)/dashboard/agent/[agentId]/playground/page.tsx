@@ -32,6 +32,16 @@ import {
   agentConfigActionSchema,
   DEFAULT_AGENT_CONFIG,
 } from "@/lib/schemas/agent-config";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputActions,
+  PromptInputAction,
+} from "@/components/ui/prompt-input";
+import {
+  Message,
+} from "@/components/ui/message";
+import { Loader } from "@/components/ui/loader";
 
 // Form schema derived from the server action schema
 const formSchema = agentConfigActionSchema.omit({ agentId: true });
@@ -114,6 +124,7 @@ export default function PlaygroundPage() {
     data,
   } = useChat({
     api: "/api/chat",
+    streamProtocol: 'text',
     body: {
       agentId: agentId,
       //TODO: Hmm thats why a good idea for a client to give back a uuid type backend
@@ -129,6 +140,8 @@ export default function PlaygroundPage() {
       },
     ],
   });
+  // Add setInput for direct input state update
+  const setInput = (val: string) => handleInputChange({ target: { value: val } } as any);
 
   console.log('metadata:', JSON.stringify(metadata, null, 2))
   console.log('data:', JSON.stringify(data, null, 2))
@@ -356,80 +369,61 @@ export default function PlaygroundPage() {
         {/* Right side chat interface */}
         <div className="border rounded-lg flex flex-col h-[600px] bg-muted/10">
           <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === "user"
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "bg-gray-100 dark:bg-gray-800"
-                    }`}
+            {messages.map((message) => {
+              return (
+                <Message
+                  key={message.id}
+                  className={message.role === "user" ? "justify-end" : "justify-start"}
                 >
-                  {message.parts.map((part, i) => {
-                    switch (part.type) {
-                      case "text":
-                        return (
-                          <div key={`${message.id}-${i}`}>{part.text}</div>
-                        );
-                    }
-                  })}
-                </div>
-              </div>
-            ))}
+                  {message.content}
+                </Message>
+              );
+            })}
             {/* Loading animation when status is submitting */}
             {chatStatus === "submitted" && (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100 dark:bg-gray-800">
-                  <div className="flex space-x-1 items-center">
-                    <span
-                      className="w-2 h-2 rounded-full bg-gray-500 animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 rounded-full bg-gray-500 animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    ></span>
-                    <span
-                      className="w-2 h-2 rounded-full bg-gray-500 animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    ></span>
-                  </div>
-                </div>
-              </div>
+              <Loader variant="typing" />
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="">
-            <form onSubmit={handleChatSubmit} className="relative">
-              <Textarea
+          <div className="p-2 border-t bg-background">
+            <PromptInput
+              value={input}
+              onValueChange={setInput}
+              isLoading={chatStatus === "streaming"}
+              onSubmit={() => {
+                if (input.trim()) handleChatSubmit();
+              }}
+              className="w-full"
+            >
+              <PromptInputTextarea
                 placeholder="Message..."
-                value={input}
-                onChange={handleInputChange}
-                className="min-h-[50px] p-4 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    handleChatSubmit(e);
+                    if (input.trim()) handleChatSubmit(e);
                   }
                 }}
+                className="min-h-[50px]"
               />
-              <Button
-                type="submit"
-                className="absolute right-2 bottom-4"
-                disabled={!input.trim()}
-                variant="ghost"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-              <div className="absolute right-10 left-0 bottom-0 flex justify-center mt-3 p-2">
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <span>Powered By OpenChat.co</span>
-                </div>
+              <PromptInputActions>
+                <PromptInputAction tooltip="Send">
+                  <Button
+                    type="submit"
+                    disabled={!input.trim()}
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </PromptInputAction>
+              </PromptInputActions>
+            </PromptInput>
+            <div className="flex justify-center mt-3 p-2">
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <span>Powered By OpenChat.co</span>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
