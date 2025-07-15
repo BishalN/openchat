@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -97,7 +97,7 @@ export default function PlaygroundPage() {
   // Handle form submission
   const onSubmit = (data: FormValues) => {
     execute({
-      agentId: Number(agentId),
+      agentId: agentId as string,
       config: data.config,
     });
   };

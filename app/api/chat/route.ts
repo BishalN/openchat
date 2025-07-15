@@ -4,18 +4,11 @@ import { streamText, ToolSet } from "ai";
 import { z } from "zod";
 import {
   messagesTable,
-  profilesTable,
 } from "@/drizzle/schema";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/drizzle";
 
-import { eq } from "drizzle-orm";
-import {
-  handleConversation,
-  storeMessage,
-  selectModel,
-  errorHandler,
-} from "./utils";
+import { errorHandler } from "./utils";
 import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 
 // Allow streaming responses up to 30 seconds
@@ -100,8 +93,11 @@ export async function POST(req: Request) {
 
     // TODO: use tool call to get the context from db instead of system prompt
     // Set up system prompt with context information
-    const systemPrompt = `${SYSTEM_PROMPT_DEFAULT} Answer the following question based only on the provided context: ${context.map((c) => c.content).join(", ")}
-    Question: ${lastUserMessage.content}
+    const systemPrompt = `${SYSTEM_PROMPT_DEFAULT} 
+
+    Last user message: ${lastUserMessage.content}
+
+    Use the tools to get the context from the db and answer questions.
     
     Don't include any disclaimers or unnecessary information. Just answer the question based on the context provided. If you don't know the answer, say "I don't know."
 
@@ -116,7 +112,21 @@ export async function POST(req: Request) {
       model: google("gemini-2.0-flash"),
       system: systemPrompt,
       messages: messages,
-      tools: {} as ToolSet,
+      tools: {
+        getContext: {
+          description: "Get the context from the db",
+          parameters: z.object({
+            question: z.string().describe("The question to get the context for, this is the last user message"),
+          }),
+          execute: async ({ question }) => {
+            const context = await findRelevantContent(
+              question,
+              agentId
+            );
+            return context.map((c) => c.content).join(", ");
+          },
+        },
+      } as ToolSet,
       maxSteps: 10,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
@@ -128,12 +138,10 @@ export async function POST(req: Request) {
           conversationId: conversationId,
           // todo: add tool enum to db schema
           role: response.messages[0].role as "user" | "assistant" | "system",
+          // TODO: handle tool calls and tool results
           content: response.messages[0].content as string,
           createdAt: new Date(),
         });
-
-        //@ts-ignore
-        response.sources = context;
       },
     })
 

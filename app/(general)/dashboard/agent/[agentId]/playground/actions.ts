@@ -20,8 +20,6 @@ const authActionClient = createSafeActionClient().use(async ({ next }) => {
   return next({ ctx: { user } });
 });
 
-// Schema for validating agent configuration updates
-
 // Server action to update agent configuration
 export const updateAgentConfig = authActionClient
   .schema(agentConfigActionSchema)

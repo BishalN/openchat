@@ -30,7 +30,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function AgentConfigSheet() {
   const { agentId } = useParams();
 
-     // Use our custom hook instead of direct TRPC calls
+  // Use our custom hook instead of direct TRPC calls
   const { agent, initialConfig } = useAgentQuery(agentId as string);
 
   // Initialize form with values from our custom hook
@@ -53,7 +53,7 @@ export function AgentConfigSheet() {
       reset({ config: initialConfig }, { keepDirty: false });
     }
   }, [agent, initialConfig, reset]);
-    // Setup the update action with loading/error states
+  // Setup the update action with loading/error states
   const { execute, status } = useAction(updateAgentConfig, {
     onSuccess: ({ data }) => {
       if (data?.success) {
@@ -85,7 +85,7 @@ export function AgentConfigSheet() {
   // Handle form submission
   const onSubmit = (data: FormValues) => {
     execute({
-      agentId: Number(agentId),
+      agentId: agentId as string,
       config: data.config,
     });
   };
@@ -95,7 +95,7 @@ export function AgentConfigSheet() {
         <Button variant="outline">Open</Button>
       </SheetTrigger>
       <SheetContent>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center justify-between">

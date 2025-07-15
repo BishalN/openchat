@@ -24,7 +24,7 @@ export const DEFAULT_AGENT_CONFIG = {
 
 // Action schema for updating agent configuration
 export const agentConfigActionSchema = z.object({
-  agentId: z.number(),
+  agentId: z.string(),
   config: agentConfigSchema,
 });
 
