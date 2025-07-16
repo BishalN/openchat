@@ -6,24 +6,18 @@ import { TabType } from "@/app/(general)/dashboard/agent/[agentId]/settings/page
 
 interface AgentGeneralSettings {
   name: string;
-  isCreditLimitEnabled: boolean;
-  creditLimit: number;
   isPublic: boolean; // Add isPublic property
 }
 
-export function useAgentSettings(agentId: string | number) {
+export function useAgentSettings(agentId: string) {
   const router = useRouter();
   const { toast } = useToast();
-  const numericAgentId =
-    typeof agentId === "string" ? Number(agentId) : agentId;
 
   const [activeTab, setActiveTab] = useState<TabType>("general");
 
   // State for form fields
   const [settings, setSettings] = useState<AgentGeneralSettings>({
     name: "",
-    isCreditLimitEnabled: false,
-    creditLimit: 0,
     isPublic: false, // Default to private
   });
 
@@ -44,7 +38,7 @@ export function useAgentSettings(agentId: string | number) {
     error: fetchError,
     refetch,
   } = trpc.agent.getById.useQuery(
-    { id: numericAgentId },
+    { id: agentId },
     {
       enabled: !!agentId,
       refetchOnWindowFocus: false,
@@ -151,9 +145,8 @@ export function useAgentSettings(agentId: string | number) {
     if (data) {
       setSettings({
         name: data.name || "",
-        isCreditLimitEnabled: !!data.isCreditsLimitEnabled,
-        creditLimit: data.creditLimit || 0,
         isPublic: !!data.isPublic, // Get visibility status
+
       });
     }
   }, [data]);
@@ -172,18 +165,15 @@ export function useAgentSettings(agentId: string | number) {
   // Save all settings
   const saveSettings = async () => {
     await updateAgent({
-      id: numericAgentId,
+      id: agentId,
       name: settings.name,
-      creditLimit: settings.isCreditLimitEnabled
-        ? settings.creditLimit
-        : undefined,
     });
   };
 
   // Make agent public or private
   const handleMakeAgentPublic = async () => {
     await makeAgentPublic({
-      id: numericAgentId,
+      id: agentId,
       isPublic: !settings.isPublic,
     });
   };
@@ -218,7 +208,7 @@ export function useAgentSettings(agentId: string | number) {
     // Proceed with deletion
     setIsDeleting(true);
     try {
-      await deleteAgent({ id: numericAgentId });
+      await deleteAgent({ id: agentId });
     } catch (error) {
       // Error is handled in the onError callback
       setIsDeleting(false);
@@ -239,7 +229,7 @@ export function useAgentSettings(agentId: string | number) {
   const handleDeleteAllConversations = async () => {
     setIsDeletingConversations(true);
     try {
-      await deleteAllConversations({ id: numericAgentId });
+      await deleteAllConversations({ id: agentId });
     } catch (error) {
       // Error is handled in the onError callback
       setIsDeletingConversations(false);
@@ -264,9 +254,6 @@ export function useAgentSettings(agentId: string | number) {
 
     // Field-specific updaters (for convenience)
     setName: (name: string) => updateSetting("name", name),
-    setCreditLimitEnabled: (enabled: boolean) =>
-      updateSetting("isCreditLimitEnabled", enabled),
-    setCreditLimit: (limit: number) => updateSetting("creditLimit", limit),
 
     // Delete agent functionality
     isDeleteDialogOpen,

@@ -1,3 +1,4 @@
+import { InferSelectModel, InferInsertModel, relations } from "drizzle-orm";
 import {
   integer,
   pgTable,
@@ -9,6 +10,8 @@ import {
   index,
   vector,
   uuid,
+  varchar,
+  json,
 } from "drizzle-orm/pg-core";
 
 export interface AgentConfig {
@@ -39,7 +42,7 @@ export const sourceTypeEnum = pgEnum("source_type", [
   "notion",
 ]);
 
-export const agentRoleEnum = pgEnum("agent_role", ["user", "assistant", "system"]);
+// export const agentRoleEnum = pgEnum("agent_role", ["user", "assistant", "system"]);
 
 export const agentsTable = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -149,13 +152,19 @@ export const conversationsTable = pgTable("conversations", {
   index("conversationsUserIdIdx").on(table.userId),
 ]);
 
+export const conversationsRelations = relations(conversationsTable, ({ one, many }) => ({
+  user: one(profilesTable, { fields: [conversationsTable.userId], references: [profilesTable.id] }),
+  messages: many(messagesTable),
+}));
+
 export const messagesTable = pgTable("messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   conversationId: uuid("conversation_id")
     .notNull()
     .references(() => conversationsTable.id, { onDelete: "cascade" }),
-  role: agentRoleEnum("role").notNull(),
-  content: text("content").notNull(),
+  role: varchar("role", { length: 255 }).notNull(),
+  parts: jsonb("parts").notNull(),
+  order: integer("order").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 
   // TODO: add sources metadata used for this current message
@@ -163,6 +172,28 @@ export const messagesTable = pgTable("messages", {
   index("messagesConversationIdIdx").on(table.conversationId),
 ]);
 
+export const messagesRelations = relations(messagesTable, ({ one }) => ({
+  conversation: one(conversationsTable, { fields: [messagesTable.conversationId], references: [conversationsTable.id] }),
+}));
+
+export declare namespace DB {
+  export type User = InferSelectModel<typeof profilesTable>;
+  export type NewUser = InferInsertModel<typeof profilesTable>;
+
+  export type Agent = InferSelectModel<typeof agentsTable>;
+  export type NewAgent = InferInsertModel<typeof agentsTable>;
+
+  export type Source = InferSelectModel<typeof sourcesTable>;
+  export type NewSource = InferInsertModel<typeof sourcesTable>;
+
+  export type Conversation = InferSelectModel<typeof conversationsTable>;
+  export type NewConversation = InferInsertModel<typeof conversationsTable>;
+
+  export type Message = InferSelectModel<typeof messagesTable>;
+  export type NewMessage = InferInsertModel<typeof messagesTable>;
+}
+
+// TODO: remove these once we have a proper type for the database
 export type InsertProfile = typeof profilesTable.$inferInsert;
 export type SelectProfile = typeof profilesTable.$inferSelect;
 

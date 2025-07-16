@@ -24,7 +24,7 @@ export default function ChatbotIframe() {
     isLoading: isFetching,
     error,
   } = trpc.agent.getPublicAgentById.useQuery(
-    { id: Number(agentId) },
+    { id: agentId },
     {
       // Only run query if we have an agentId
       enabled: !!agentId,

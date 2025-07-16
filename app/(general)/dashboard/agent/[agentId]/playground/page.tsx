@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useRef, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,29 +32,33 @@ import {
   agentConfigActionSchema,
   DEFAULT_AGENT_CONFIG,
 } from "@/lib/schemas/agent-config";
-import {
-  PromptInput,
-  PromptInputTextarea,
-  PromptInputActions,
-  PromptInputAction,
-} from "@/components/ui/prompt-input";
-import {
-  Message,
-} from "@/components/ui/message";
-import { Loader } from "@/components/ui/loader";
+import { ChatMessage } from "./chat-message";
 
 // Form schema derived from the server action schema
 const formSchema = agentConfigActionSchema.omit({ agentId: true });
 type FormValues = z.infer<typeof formSchema>;
 
+export function isNewConversationCreated(data: unknown): data is {
+  type: "NEW_CONVERSATION_CREATED";
+  conversationId: string;
+} {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "type" in data &&
+    data.type === "NEW_CONVERSATION_CREATED" &&
+    "conversationId" in data &&
+    typeof data.conversationId === "string"
+  );
+}
+
+
 export default function PlaygroundPage() {
   const { agentId } = useParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Use our custom hook instead of direct TRPC calls
   const { agent, initialConfig } = useAgentQuery(agentId as string);
 
-  // Initialize form with values from our custom hook
   const {
     control,
     handleSubmit,
@@ -111,6 +115,9 @@ export default function PlaygroundPage() {
       config: data.config,
     });
   };
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const conversationId = searchParams.get("id");
 
   // Chat integration with Vercel AI SDK
   const {
@@ -124,13 +131,9 @@ export default function PlaygroundPage() {
     data,
   } = useChat({
     api: "/api/chat",
-    streamProtocol: 'text',
     body: {
       agentId: agentId,
-      //TODO: Hmm thats why a good idea for a client to give back a uuid type backend
-      // conversationId: null,
-      // Include optional conversationId to save conversation history
-      // conversationId: "unique-conversation-id",
+      conversationId,
     },
     initialMessages: [
       {
@@ -140,11 +143,14 @@ export default function PlaygroundPage() {
       },
     ],
   });
-  // Add setInput for direct input state update
-  const setInput = (val: string) => handleInputChange({ target: { value: val } } as any);
+  useEffect(() => {
+    const lastDataItem = data?.[data.length - 1];
+    if (lastDataItem && isNewConversationCreated(lastDataItem)) {
+      router.push(`?id=${lastDataItem.conversationId}`);
+    }
+  }, [data, router]);
 
-  console.log('metadata:', JSON.stringify(metadata, null, 2))
-  console.log('data:', JSON.stringify(data, null, 2))
+
 
   // Show chat error if any
   useEffect(() => {
@@ -368,62 +374,74 @@ export default function PlaygroundPage() {
 
         {/* Right side chat interface */}
         <div className="border rounded-lg flex flex-col h-[600px] bg-muted/10">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
-            {messages.map((message) => {
-              return (
-                <Message
-                  key={message.id}
-                  className={message.role === "user" ? "justify-end" : "justify-start"}
+          <div
+            className="mx-auto w-full max-w-[65ch] flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500"
+            role="log"
+            aria-label="Chat messages"
+          >
+            {/* {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === "user"
+                    ? "bg-black text-white dark:bg-white dark:text-black"
+                    : "bg-gray-100 dark:bg-gray-800"
+                    }`}
                 >
-                  {message.content}
-                </Message>
+                  {message.parts.map((part, i) => {
+                    switch (part.type) {
+                      case "text":
+                        return (
+                          <div key={`${message.id}-${i}`}>{part.text}</div>
+                        );
+                    }
+                  })}
+                </div>
+              </div>
+            ))} */}
+            {messages.map((message, index) => {
+              return (
+                <ChatMessage
+                  key={index}
+                  parts={message.parts ?? []}
+                  role={message.role}
+                  userName={"You"}
+                />
               );
             })}
-            {/* Loading animation when status is submitting */}
-            {chatStatus === "submitted" && (
-              <Loader variant="typing" />
-            )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-2 border-t bg-background">
-            <PromptInput
-              value={input}
-              onValueChange={setInput}
-              isLoading={chatStatus === "streaming"}
-              onSubmit={() => {
-                if (input.trim()) handleChatSubmit();
-              }}
-              className="w-full"
-            >
-              <PromptInputTextarea
+          <div className="">
+            <form onSubmit={handleChatSubmit} className="relative">
+              <Textarea
                 placeholder="Message..."
+                value={input}
+                onChange={handleInputChange}
+                className="min-h-[50px] p-4 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    if (input.trim()) handleChatSubmit(e);
+                    handleChatSubmit(e);
                   }
                 }}
-                className="min-h-[50px]"
               />
-              <PromptInputActions>
-                <PromptInputAction tooltip="Send">
-                  <Button
-                    type="submit"
-                    disabled={!input.trim()}
-                    variant="ghost"
-                    className="h-8 w-8 p-0"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </PromptInputAction>
-              </PromptInputActions>
-            </PromptInput>
-            <div className="flex justify-center mt-3 p-2">
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <span>Powered By OpenChat.co</span>
+              <Button
+                type="submit"
+                className="absolute right-2 bottom-4"
+                disabled={!input.trim()}
+                variant="ghost"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+              <div className="absolute right-10 left-0 bottom-0 flex justify-center mt-3 p-2">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <span>Powered By OpenChat.co</span>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

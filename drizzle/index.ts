@@ -6,7 +6,7 @@ const connectionString = process.env.DATABASE_URL as string;
 
 // Disable prefetch as it is not supported for "Transaction" pool mode
 const client = postgres(connectionString, { prepare: false });
-export const db = drizzle(client);
+export const db = drizzle(client, { schema });
 
 // : ReturnType<typeof drizzle<typeof schema>>
 
