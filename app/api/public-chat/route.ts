@@ -1,112 +1,110 @@
 import { findRelevantContent } from "@/lib/ai/embedding";
 import { google } from "@ai-sdk/google";
-import { streamText, ToolSet } from "ai";
+import { appendResponseMessages, createDataStreamResponse, Message, streamText, ToolSet } from "ai";
 import { z } from "zod";
-import { messagesTable } from "@/drizzle/schema";
+import { conversationsTable, messagesTable } from "@/drizzle/schema";
 import { db } from "@/drizzle";
 import { errorHandler } from "../chat/utils";
+import { upsertConversation, upsertGuestConversation } from "@/drizzle/queries";
+import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
+import { eq } from "drizzle-orm";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Allow streaming responses up to 60 seconds
+export const maxDuration = 60;
 
-const MessageSchema = z.object({
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string(),
-});
-
-const ChatRequestSchema = z.object({
-  messages: z.array(MessageSchema),
-  agentId: z
-    .string()
-    .or(z.number())
-    .transform((val) => String(val)),
-  conversationId: z.string().default("d9cd7725-e8e3-4c06-9ea8-1883a4c8d9fb"),
-});
 
 export async function POST(req: Request) {
   try {
-    // Parse and validate request body
-    const body = await req.json();
-    const parsedBody = ChatRequestSchema.safeParse(body);
+    const body = await req.json() as {
+      messages: Array<Message>;
+      conversationId?: string;
+      agentId: string;
+    };
 
-    if (!parsedBody.success) {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid request body",
-          details: parsedBody.error.format(),
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+    const { messages, agentId, conversationId } = body;
+    if (!messages.length) {
+      return new Response("No messages provided", { status: 400 });
+    }
+    // If no conversationId is provided, create a new conversation with the user's message
+    let currentConversationId = conversationId;
+    if (!currentConversationId) {
+      const newConversationId = crypto.randomUUID();
+      await upsertGuestConversation({
+        conversationId: newConversationId,
+        title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
+        messages: messages, // Only save the user's message initially
+        agentId,
+      });
+      currentConversationId = newConversationId;
+    } else {
+      // Verify the conversation belongs to the user
+      const conversation = await db.query.conversationsTable.findFirst({
+        where: eq(conversationsTable.id, currentConversationId),
+      });
+      if (!conversation) {
+        return new Response("Conversation not found", { status: 404 });
+      }
     }
 
-    const { messages, agentId, conversationId } = parsedBody.data;
+    return createDataStreamResponse({
+      execute: async (dataStream) => {
+        // If this is a new chat, send the chat ID to the frontend
+        if (!conversationId) {
+          dataStream.writeData({
+            type: "NEW_CONVERSATION_CREATED",
+            conversationId: currentConversationId,
+          });
+        }
 
-    // Get the last message from the user (should be the most recent message)
-    const lastUserMessage = messages.filter((msg) => msg.role === "user").pop();
-    if (!lastUserMessage) {
-      return new Response(
-        JSON.stringify({ error: "No user message provided" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-    // insert the user message to the db
-    await db.insert(messagesTable).values({
-      conversationId: conversationId,
-      role: "user",
-      content: lastUserMessage.content as string,
-      createdAt: new Date(),
-    });
-
-    // Find relevant context based on the agent ID and user's message
-    const context = await findRelevantContent(
-      lastUserMessage.content,
-      agentId
-    );
-
-    // Set up system prompt with context information
-    const systemPrompt = `You are a helpful assistant.\n\nLast user message: ${lastUserMessage.content}\n\nUse the tools to get the context from the db and answer questions.\n\nDon't include any disclaimers or unnecessary information. Just answer the question based on the context provided. If you don't know the answer, say "I don't know."\n\nBe direct avoid saying based on the context or anything similar.`;
-
-    const result = streamText({
-      model: google("gemini-2.0-flash"),
-      system: systemPrompt,
-      messages: messages,
-      tools: {
-        getContext: {
-          description: "Get the context from the db",
-          parameters: z.object({
-            question: z.string().describe("The question to get the context for, this is the last user message"),
-          }),
-          execute: async ({ question }) => {
-            const context = await findRelevantContent(
-              question,
-              agentId
-            );
-            return context.map((c) => c.content).join(", ");
+        const result = streamText({
+          model: google("gemini-2.0-flash"),
+          messages,
+          maxSteps: 10,
+          system: SYSTEM_PROMPT_DEFAULT,
+          tools: {
+            getContext: {
+              description: "Get the context from the db",
+              parameters: z.object({
+                question: z.string().describe("The question to get the context for, this is the last user message"),
+              }),
+              execute: async ({ question }) => {
+                const context = await findRelevantContent(
+                  question,
+                  agentId
+                );
+                return context.map((c) => c.content).join(", ");
+              },
+            },
           },
-        },
-      } as ToolSet,
-      maxSteps: 10,
-      onError: (err: unknown) => {
-        console.error("Streaming error occurred:", err)
-      },
-      onFinish: async ({ response }) => {
-        await db.insert(messagesTable).values({
-          conversationId: conversationId,
-          role: response.messages[0].role as "user" | "assistant" | "system",
-          content: response.messages[0].content as string,
-          createdAt: new Date(),
-        });
-      },
-    })
+          onFinish: async ({ response }) => {
+            // Merge the existing messages with the response messages
+            const updatedMessages = appendResponseMessages({
+              messages,
+              responseMessages: response.messages,
+            });
 
-    return result.toDataStreamResponse({
-      sendReasoning: true,
-      sendSources: true,
-      getErrorMessage: (error: unknown) => {
-        console.error("Error forwarded to client:", error)
-        return errorHandler(error)
+            const lastMessage = messages[messages.length - 1];
+            if (!lastMessage) {
+              return;
+            }
+
+            // Save the complete chat history
+            await upsertGuestConversation({
+              conversationId: currentConversationId,
+              title: lastMessage.content.slice(0, 50) + "...",
+              messages: updatedMessages,
+              agentId,
+            });
+          },
+        });
+
+        result.mergeIntoDataStream(dataStream);
       },
-    })
+      onError: (e) => {
+        console.error(e);
+        return "Oops, an error occurred!";
+      },
+    });
   } catch (error) {
     console.error("Error processing chat request:", error);
     return new Response(

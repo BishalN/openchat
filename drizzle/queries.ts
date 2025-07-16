@@ -48,6 +48,50 @@ export const upsertConversation = async (opts: {
     return { id: conversationId };
 };
 
+export const upsertGuestConversation = async (opts: {
+    conversationId: string;
+    title: string;
+    messages: Message[];
+    agentId: string;
+}) => {
+    const { conversationId, title, messages: newMessages, agentId } = opts;
+
+    // First, check if the conversation exists and belongs to the user
+    const existingConversation = await db.query.conversationsTable.findFirst({
+        where: eq(conversationsTable.id, conversationId),
+    });
+
+    if (existingConversation) {
+        // If conversation exists but belongs to a different user, throw error
+        if (existingConversation.userId) {
+            throw new Error("Conversation ID already exists under a different user");
+        }
+        // Delete all existing messages
+        await db.delete(messagesTable).where(eq(messagesTable.conversationId, conversationId));
+    } else {
+        // Create new conversation
+        await db.insert(conversationsTable).values({
+            id: conversationId,
+            title,
+            agentId,
+        });
+    }
+
+    // Insert all messages
+    await db.insert(messagesTable).values(
+        newMessages.map((message, index) => ({
+            id: crypto.randomUUID(),
+            conversationId,
+            role: message.role,
+            parts: message.parts,
+            order: index,
+        })),
+    );
+
+    return { id: conversationId };
+};
+
+
 export const getConversation = async (opts: { userId: string; conversationId: string }) => {
     const { userId, conversationId } = opts;
 

@@ -14,21 +14,9 @@ import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { upsertConversation } from "@/drizzle/queries";
 import { eq } from "drizzle-orm";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Allow streaming responses up to 60 seconds
+export const maxDuration = 60;
 
-
-
-// TODO: No need for this, get from db directly, remove this
-// Define the request body schema
-// const ChatRequestSchema = z.object({
-//   messages: z.array(MessageSchema),
-//   agentId: z
-//     .string()
-//     .or(z.number())
-//     .transform((val) => String(val)),
-//   conversationId: z.string().default("d9cd7725-e8e3-4c06-9ea8-1883a4c8d9fb"),
-// });
 
 export async function POST(req: Request) {
   try {
@@ -44,7 +32,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // Parse and validate request body
     const body = await req.json() as {
       messages: Array<Message>;
       conversationId?: string;
@@ -76,20 +63,6 @@ export async function POST(req: Request) {
         return new Response("Conversation not found or unauthorized", { status: 404 });
       }
     }
-
-    //  // TODO: use tool call to get the context from db instead of system prompt
-    // // Set up system prompt with context information
-    // const systemPrompt = `${SYSTEM_PROMPT_DEFAULT} 
-
-    // Last user message: ${lastUserMessage.content}
-
-    // Use the tools to get the context from the db and answer questions.
-
-    // Don't include any disclaimers or unnecessary information. Just answer the question based on the context provided. If you don't know the answer, say "I don't know."
-
-    // Be direct avoid saying based on the context or anything similar.
-    // `;
-
 
     return createDataStreamResponse({
       execute: async (dataStream) => {

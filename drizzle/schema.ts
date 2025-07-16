@@ -140,7 +140,6 @@ export const conversationsTable = pgTable("conversations", {
     .notNull()
     .references(() => agentsTable.id, { onDelete: "cascade" }),
   userId: uuid("user_id")
-    .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),
   title: text("title"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

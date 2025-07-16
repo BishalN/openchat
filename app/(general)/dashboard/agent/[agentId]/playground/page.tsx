@@ -33,25 +33,11 @@ import {
   DEFAULT_AGENT_CONFIG,
 } from "@/lib/schemas/agent-config";
 import { ChatMessage } from "./chat-message";
+import { isNewConversationCreated } from "@/lib/utils";
 
 // Form schema derived from the server action schema
 const formSchema = agentConfigActionSchema.omit({ agentId: true });
 type FormValues = z.infer<typeof formSchema>;
-
-export function isNewConversationCreated(data: unknown): data is {
-  type: "NEW_CONVERSATION_CREATED";
-  conversationId: string;
-} {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    "type" in data &&
-    data.type === "NEW_CONVERSATION_CREATED" &&
-    "conversationId" in data &&
-    typeof data.conversationId === "string"
-  );
-}
-
 
 export default function PlaygroundPage() {
   const { agentId } = useParams();
@@ -117,7 +103,7 @@ export default function PlaygroundPage() {
   };
   const router = useRouter();
   const searchParams = useSearchParams();
-  const conversationId = searchParams.get("id");
+  const conversationId = searchParams.get("conversationId");
 
   // Chat integration with Vercel AI SDK
   const {
@@ -146,7 +132,7 @@ export default function PlaygroundPage() {
   useEffect(() => {
     const lastDataItem = data?.[data.length - 1];
     if (lastDataItem && isNewConversationCreated(lastDataItem)) {
-      router.push(`?id=${lastDataItem.conversationId}`);
+      router.push(`?conversationId=${lastDataItem.conversationId}`);
     }
   }, [data, router]);
 

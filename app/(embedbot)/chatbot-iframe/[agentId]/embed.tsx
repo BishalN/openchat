@@ -4,16 +4,17 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoreVertical, Send, X, MessageCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isNewConversationCreated } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ChatMessage } from "./chat-message";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 
 interface EmbeddableChatWidgetProps {
   agentName?: string;
   agentLogo?: string;
   initialMessage?: string;
-  suggestedQuestions?: string[];
   privacyPolicyUrl?: string;
 }
 
@@ -21,11 +22,6 @@ export default function EmbeddableChatWidget({
   agentName = "OpenChat AI Agent",
   agentLogo = "oC",
   initialMessage = "👋 Hi! I am OpenChat AI, ask me anything about OpenChat!",
-  suggestedQuestions = [
-    "What is OpenChat?",
-    "How do I add data to my agent?",
-    "Is there a free plan?",
-  ],
   privacyPolicyUrl = "#",
 }: EmbeddableChatWidgetProps) {
   const { agentId } = useParams();
@@ -33,19 +29,24 @@ export default function EmbeddableChatWidget({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const conversationId = searchParams.get("conversationId");
+
   // Initialize chat with AI SDK
   const {
     messages,
     input,
     handleInputChange,
     handleSubmit: handleChatSubmit,
-    error: chatError,
     status: chatStatus,
+    data,
   } = useChat({
     api: "/api/public-chat",
     body: {
       agentId: agentId,
       stream: true,
+      conversationId,
     },
     initialMessages: [
       {
@@ -53,14 +54,14 @@ export default function EmbeddableChatWidget({
         role: "assistant",
         content: initialMessage,
       },
-      {
-        id: "create-agent",
-        role: "assistant",
-        content:
-          "By the way, you can create an agent like me for your website! 🤩",
-      },
     ],
   });
+  useEffect(() => {
+    const lastDataItem = data?.[data.length - 1];
+    if (lastDataItem && isNewConversationCreated(lastDataItem)) {
+      router.push(`?conversationId=${lastDataItem.conversationId}`);
+    }
+  }, [data, router]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -108,13 +109,30 @@ export default function EmbeddableChatWidget({
             <span className="font-medium">{agentName}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white h-8 w-8 hover:bg-white/20"
-            >
-              <MoreVertical className="h-5 w-5" />
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white h-8 w-8 hover:bg-white/20"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              {/* <PopoverContent align="end" className="w-56 p-0 bg-white text-black border border-gray-200 shadow-lg rounded-lg">
+                <div className="py-2">
+                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus:outline-none">
+                    <span>Start a new chat</span>
+                  </button>
+                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>
+                    <span>End chat</span>
+                  </button>
+                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus:outline-none">
+                    <span>View recent chats</span>
+                  </button>
+                </div>
+              </PopoverContent> */}
+            </Popover>
             <Button
               variant="ghost"
               size="icon"
@@ -128,26 +146,17 @@ export default function EmbeddableChatWidget({
 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {message.role === "assistant" && (
-                <div className="bg-black text-white rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2 flex-shrink-0">
-                  {agentLogo}
-                </div>
-              )}
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-800"
-                  }`}
-              >
-                {message.content}
-              </div>
-            </div>
-          ))}
+          {messages.map((message, index) => {
+            return (
+              <ChatMessage
+                key={index}
+                parts={message.parts ?? []}
+                role={message.role}
+                userName={message.role === "user" ? "You" : "AI"}
+              />
+            );
+          })}
+
           {/* Loading animation when status is submitting */}
           {chatStatus === "submitted" && (
             <div className="flex justify-start">
@@ -171,24 +180,6 @@ export default function EmbeddableChatWidget({
           )}
           <div ref={messagesEndRef} />
         </div>
-
-        {/* Suggested Questions */}
-        {suggestedQuestions.length > 0 && (
-          <div className="p-2 border-t border-gray-200 flex gap-2 overflow-x-auto">
-            {suggestedQuestions.map((question, index) => (
-              <button
-                key={index}
-                className="whitespace-nowrap px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-sm"
-                onClick={() => {
-                  handleInputChange({ target: { value: question } } as any);
-                  handleChatSubmit(new Event("submit") as any);
-                }}
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Input Area */}
         <div className="p-3 border-t border-gray-200">

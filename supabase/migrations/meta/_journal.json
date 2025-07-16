@@ -15,6 +15,13 @@
       "when": 1752634818307,
       "tag": "0001_overrated_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752638248810,
+      "tag": "0002_thankful_quasar",
+      "breakpoints": true
     }
   ]
 }
