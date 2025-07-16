@@ -8,9 +8,15 @@ import { errorHandler } from "../chat/utils";
 import { upsertConversation, upsertGuestConversation } from "@/drizzle/queries";
 import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { eq } from "drizzle-orm";
+import { Langfuse } from "langfuse";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
+
+
+const langfuse = new Langfuse({
+  environment: process.env.NODE_ENV ?? "development",
+});
 
 
 export async function POST(req: Request) {
@@ -46,6 +52,11 @@ export async function POST(req: Request) {
       }
     }
 
+    const trace = langfuse.trace({
+      sessionId: currentConversationId,
+      name: "chat",
+    });
+
     return createDataStreamResponse({
       execute: async (dataStream) => {
         // If this is a new chat, send the chat ID to the frontend
@@ -57,6 +68,13 @@ export async function POST(req: Request) {
         }
 
         const result = streamText({
+          experimental_telemetry: {
+            isEnabled: true,
+            functionId: `public-chat`,
+            metadata: {
+              langfuseTraceId: trace.id,
+            },
+          },
           model: google("gemini-2.0-flash"),
           messages,
           maxSteps: 10,
@@ -95,6 +113,8 @@ export async function POST(req: Request) {
               messages: updatedMessages,
               agentId,
             });
+
+            await langfuse.flushAsync();
           },
         });
 

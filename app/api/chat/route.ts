@@ -4,19 +4,22 @@ import { appendResponseMessages, createDataStreamResponse, Message, streamText, 
 import { z } from "zod";
 import {
   conversationsTable,
-  messagesTable,
 } from "@/drizzle/schema";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/drizzle";
 
-import { errorHandler } from "./utils";
 import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { upsertConversation } from "@/drizzle/queries";
 import { eq } from "drizzle-orm";
+import { Langfuse } from "langfuse";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
 
+
+const langfuse = new Langfuse({
+  environment: process.env.NODE_ENV ?? "development",
+});
 
 export async function POST(req: Request) {
   try {
@@ -38,6 +41,13 @@ export async function POST(req: Request) {
       agentId: string;
     };
 
+    // Create a trace for the conversation
+    const trace = langfuse.trace({
+      name: "chat",
+      userId: user.id,
+    });
+
+
     const { messages, agentId, conversationId } = body;
     if (!messages.length) {
       return new Response("No messages provided", { status: 400 });
@@ -46,6 +56,16 @@ export async function POST(req: Request) {
     let currentConversationId = conversationId;
     if (!currentConversationId) {
       const newConversationId = crypto.randomUUID();
+      const createConversationSpan = trace.span({
+        name: "create-conversation",
+        input: {
+          userId: user.id,
+          conversationId: newConversationId,
+          title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
+          messages,
+          agentId,
+        },
+      });
       await upsertConversation({
         userId: user.id,
         conversationId: newConversationId,
@@ -53,16 +73,25 @@ export async function POST(req: Request) {
         messages: messages, // Only save the user's message initially
         agentId,
       });
+      createConversationSpan.end({ output: { conversationId: newConversationId } });
       currentConversationId = newConversationId;
     } else {
       // Verify the conversation belongs to the user
+      const findConversationSpan = trace.span({
+        name: "find-conversation",
+        input: { conversationId: currentConversationId },
+      });
       const conversation = await db.query.conversationsTable.findFirst({
         where: eq(conversationsTable.id, currentConversationId),
       });
       if (!conversation || conversation.userId !== user.id) {
         return new Response("Conversation not found or unauthorized", { status: 404 });
       }
+      findConversationSpan.end({ output: { conversation } });
     }
+    trace.update({ sessionId: currentConversationId });
+
+
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
@@ -75,6 +104,13 @@ export async function POST(req: Request) {
         }
 
         const result = streamText({
+          experimental_telemetry: {
+            isEnabled: true,
+            functionId: `agent`,
+            metadata: {
+              langfuseTraceId: trace.id,
+            },
+          },
           model: google("gemini-2.0-flash"),
           messages,
           maxSteps: 10,
@@ -86,10 +122,15 @@ export async function POST(req: Request) {
                 question: z.string().describe("The question to get the context for, this is the last user message"),
               }),
               execute: async ({ question }) => {
+                const getContextSpan = trace.span({
+                  name: "get-context",
+                  input: { question },
+                });
                 const context = await findRelevantContent(
                   question,
                   agentId
                 );
+                getContextSpan.end({ output: { context } });
                 return context.map((c) => c.content).join(", ");
               },
             },
@@ -107,6 +148,16 @@ export async function POST(req: Request) {
             }
 
             // Save the complete chat history
+            const saveUpdatedConversationSpan = trace.span({
+              name: "save-updated-conversation",
+              input: {
+                userId: user.id,
+                conversationId: currentConversationId,
+                title: lastMessage.content.slice(0, 50) + "...",
+                messages: updatedMessages,
+                agentId,
+              },
+            });
             await upsertConversation({
               userId: user.id,
               conversationId: currentConversationId,
@@ -114,6 +165,8 @@ export async function POST(req: Request) {
               messages: updatedMessages,
               agentId,
             });
+            saveUpdatedConversationSpan.end({ output: { conversationId: currentConversationId } });
+            await langfuse.flushAsync();
           },
         });
 
