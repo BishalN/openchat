@@ -21,10 +21,9 @@ export const sourcesSchema = z.object({
   websites: z.array(
     z.object({
       id: z.string(), // uuid
-      url: z.string().url(),
-      title: z.string().optional(),
-      content: z.string(),
       name: z.string(),
+      content: z.string(),
+      url: z.string().url(),
     })
   ).nullable(),
   qa: z
@@ -36,15 +35,6 @@ export const sourcesSchema = z.object({
           answer: z.string(),
         })
       ),
-      name: z.string(),
-    })
-    .nullable(),
-  notion: z
-    .object({
-      id: z.string(), // uuid
-      pageId: z.string(),
-      title: z.string().optional(),
-      content: z.string().optional(),
       name: z.string(),
     })
     .nullable(),
@@ -61,8 +51,13 @@ export type FileSource = {
 }
 export type TextSource = z.infer<typeof sourcesSchema.shape.text>;
 export type QASource = z.infer<typeof sourcesSchema.shape.qa>;
-export type WebsiteSource = z.infer<typeof sourcesSchema.shape.websites>;
-export type NotionSource = z.infer<typeof sourcesSchema.shape.notion>;
+export type WebsiteSources = z.infer<typeof sourcesSchema.shape.websites>;
+export type WebsiteSource = {
+  id: string;
+  name: string;
+  content: string;
+  url: string;
+}
 
 export const eventsMap = {
   "agent/pipeline.create": {

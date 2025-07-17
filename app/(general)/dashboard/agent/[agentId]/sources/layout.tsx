@@ -17,13 +17,7 @@ import { useSources } from "@/hooks/use-sources";
 import { cn } from "@/lib/utils";
 import { TrainingProgress } from "@/components/training-progress";
 import type { Source } from "@/store/use-sources-store";
-
-const formatSize = (bytes: number): string => {
-  if (bytes === undefined || bytes === null || bytes < 0) return "0 B";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
+import { formatSize } from "@/lib/utils";
 
 const SourceIcon = ({ type }: { type: Source["type"] }) => {
   switch (type) {
@@ -45,7 +39,7 @@ const SourceIcon = ({ type }: { type: Source["type"] }) => {
 export default function SourcesLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agentId } = useParams();
-  const agentIdNumber = Number(agentId);
+  const agentIdNumber = agentId as string;
 
   const {
     sources,
@@ -87,19 +81,12 @@ export default function SourcesLayout({ children }: { children: ReactNode }) {
             label="Q&A"
             active={pathname === `${basePath}/qa`}
           />
-          {/* // TODO: Add to roadmap */}
-          {/* <NavItem
+          <NavItem
             href={`${basePath}/website`}
             icon={<Globe className="h-5 w-5" />}
             label="Website"
             active={pathname === `${basePath}/website`}
           />
-          <NavItem
-            href={`${basePath}/notion`}
-            icon={<FileStack className="h-5 w-5" />}
-            label="Notion"
-            active={pathname === `${basePath}/notion`}
-          /> */}
         </div>
 
         {/* Main content */}

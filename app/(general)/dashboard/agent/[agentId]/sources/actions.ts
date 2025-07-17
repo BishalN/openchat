@@ -5,9 +5,10 @@ import { db } from "@/drizzle";
 import {
   agentsTable,
   sourcesTable,
-  qaPairsTable,
   embeddingsTable,
   type SelectSource,
+  FileSourceDetails,
+  WebsiteSourceDetails,
 } from "@/drizzle/schema";
 import { createClient } from "@/utils/supabase/server";
 import { inngest } from "@/inngest/client";
@@ -32,13 +33,13 @@ const authActionClient = createSafeActionClient().use(async ({ next }) => {
 export const retrainAgent = authActionClient
   .schema(
     sourceStoreSchema.extend({
-      agentId: z.number().min(1, "Agent ID is required"),
+      agentId: z.string(),
     })
   )
   .action(
     async ({
       ctx: { user },
-      parsedInput: { agentId, file: inputFiles, notion, qa, text, websites },
+      parsedInput: { agentId, file: inputFiles, qa, text, websites },
     }) => {
       try {
         const clientId = nanoid();
@@ -61,7 +62,7 @@ export const retrainAgent = authActionClient
             .select({
               id: sourcesTable.id,
               type: sourcesTable.type,
-              fileUrl: sourcesTable.fileUrl,
+              details: sourcesTable.details,
             })
             .from(sourcesTable)
             .where(eq(sourcesTable.agentId, agentId));
@@ -78,8 +79,8 @@ export const retrainAgent = authActionClient
 
           // URLs of existing files to avoid re-inserting
           const existingFileUrls = existingSources
-            .filter((s) => s.type === "file" && s.fileUrl)
-            .map((s) => s.fileUrl!);
+            .filter((s) => s.type === "file" && (s.details as FileSourceDetails).fileUrl)
+            .map((s) => (s.details as FileSourceDetails).fileUrl!);
 
           console.log("Existing file URLs:", existingFileUrls);
           console.log(
@@ -105,8 +106,8 @@ export const retrainAgent = authActionClient
           if (existingQaSourceIds.length > 0) {
             // Delete QA pairs (as before)
             await tx
-              .delete(qaPairsTable)
-              .where(inArray(qaPairsTable.sourceId, existingQaSourceIds));
+              .delete(sourcesTable)
+              .where(inArray(sourcesTable.id, existingQaSourceIds));
             console.log(
               `Deleted QA pairs for ${existingQaSourceIds.length} QA sources.`
             );
@@ -130,7 +131,6 @@ export const retrainAgent = authActionClient
           let textSource: SelectSource | undefined;
           let newFileSources: SelectSource[] = []; // Only newly inserted files
           let websitesSource: SelectSource[] = [];
-          let notionSource: SelectSource | undefined;
           let qaSource: SelectSource | undefined;
 
           // Upsert text source (replace if exists, insert if not)
@@ -142,8 +142,10 @@ export const retrainAgent = authActionClient
                 agentId: agent.id,
                 type: "text",
                 name: text.name,
-                content: text.content,
-                characterCount: text.size,
+                details: {
+                  content: text.content,
+                  characterCount: text.size,
+                },
               })
               .returning();
           }
@@ -164,9 +166,11 @@ export const retrainAgent = authActionClient
                     agentId: agent.id,
                     type: "file" as const,
                     name: f.name,
-                    fileUrl: f.fileUrl, // Already checked it exists
-                    fileSize: f.fileSize,
-                    mimeType: f.mimeType,
+                    details: {
+                      fileUrl: f.fileUrl, // Already checked it exists
+                      fileSize: f.fileSize,
+                      mimeType: f.mimeType,
+                    },
                   }))
                 )
                 .returning();
@@ -188,7 +192,9 @@ export const retrainAgent = authActionClient
                   agentId: agent.id,
                   type: "website" as const,
                   name: w.name,
-                  url: w.url,
+                  details: {
+                    content: w.content,
+                  },
                 }))
               )
               .returning();
@@ -199,36 +205,18 @@ export const retrainAgent = authActionClient
             // Since we deleted non-file sources, this will always be an insert
             [qaSource] = await tx
               .insert(sourcesTable)
+              // @ts-ignore
               .values({
                 agentId: agent.id,
                 type: "qa",
                 name: qa.name,
-                characterCount: qa.size,
+                details: {
+                  qaPairs: qa.qaPairs,
+                  characterCount: qa.size,
+                },
               })
               .returning();
 
-            // Insert QA pairs
-            await tx.insert(qaPairsTable).values(
-              qa.qaPairs.map((pair) => ({
-                sourceId: qaSource!.id,
-                question: pair.question,
-                answer: pair.answer,
-              }))
-            );
-          }
-
-          // Upsert notion source (replace/insert)
-          if (notion) {
-            // Since we deleted non-file sources, this will always be an insert
-            [notionSource] = await tx
-              .insert(sourcesTable)
-              .values({
-                agentId: agent.id,
-                type: "notion",
-                name: notion.name,
-                url: notion.url,
-              })
-              .returning();
           }
 
           // 5. Trigger the Inngest pipeline ONLY for newly added/updated sources
@@ -236,38 +224,32 @@ export const retrainAgent = authActionClient
           const sourcesForPipeline = {
             text: textSource
               ? {
-                  id: textSource.id,
-                  name: textSource.name,
-                  content: text!.content,
-                  size: text!.size,
-                }
+                id: textSource.id,
+                name: textSource.name,
+                content: text!.content,
+                size: text!.size,
+              }
               : null,
             files: newFileSources.map((f) => ({
               id: f.id,
               name: f.name,
-              fileUrl: f.fileUrl!,
-              mimeType: f.mimeType!,
-              fileSize: f.fileSize ? f.fileSize : undefined,
+              fileUrl: (f.details as FileSourceDetails).fileUrl!,
+              mimeType: (f.details as FileSourceDetails).mimeType!,
+              fileSize: (f.details as FileSourceDetails).fileSize ? (f.details as FileSourceDetails).fileSize : undefined,
             })),
             websites: websitesSource.map((w) => ({
               id: w.id,
               name: w.name,
-              url: w.url!,
+              content: (w.details as WebsiteSourceDetails).content,
+              url: (w.details as WebsiteSourceDetails).url,
             })),
             qa: qaSource
               ? {
-                  id: qaSource.id,
-                  name: qaSource.name,
-                  qaPairs: qa!.qaPairs,
-                  size: qa!.size,
-                }
-              : null,
-            notion: notionSource
-              ? {
-                  id: notionSource.id,
-                  name: notionSource.name,
-                  url: notionSource.url!,
-                }
+                id: qaSource.id,
+                name: qaSource.name,
+                pairs: qa!.qaPairs,
+                size: qa!.size,
+              }
               : null,
           };
 

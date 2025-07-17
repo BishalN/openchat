@@ -8,10 +8,8 @@ import { trpc } from "@/trpc/client";
 import { retrainAgent } from "@/app/(general)/dashboard/agent/[agentId]/sources/actions";
 import { TrainingStatus } from "@/types/training";
 
-// Re-use or define the TrainingStatus type
-
 interface UseSourcesProps {
-  agentId: number;
+  agentId: string;
 }
 
 export function useSources({ agentId }: UseSourcesProps) {
@@ -23,7 +21,7 @@ export function useSources({ agentId }: UseSourcesProps) {
   const [isRetraining, setIsRetraining] = useState(false);
   const [retrainingData, setRetrainingData] = useState<{
     runId: string;
-    agentId?: number;
+    agentId?: string;
   } | null>(null);
   const [hasHandledRetrainingCompletion, setHasHandledRetrainingCompletion] =
     useState(false);
@@ -58,7 +56,12 @@ export function useSources({ agentId }: UseSourcesProps) {
           content: source.content || undefined,
           url: source.url || undefined,
           fileUrl: source.fileUrl || undefined,
-          size: source.fileSize || source.characterCount || undefined, // Use fileSize or characterCount
+          // TODO: calculate size of text sources, or get the proper size from the backend instead
+          size:
+            source.fileSize ||
+            source.characterCount ||
+            // formatSize(source?.details?.content?.length || 0) ||
+            undefined, // Use fileSize or characterCount
           mimeType: source.mimeType || undefined,
           qaPairs: source.type === "qa" ? source.qaPairs : undefined, // Make sure qaPairs are correctly mapped if needed
         });
@@ -172,7 +175,6 @@ export function useSources({ agentId }: UseSourcesProps) {
         })),
       websites: currentSources.filter((s) => s.type === "website"),
       qa: currentSources.find((s) => s.type === "qa") || null,
-      notion: currentSources.find((s) => s.type === "notion") || null,
     };
 
     try {

@@ -1,6 +1,6 @@
 import { loadDocument } from "./loaders";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { FileSource, QASource, Sources, TextSource } from "./client";
+import { FileSource, QASource, Sources, TextSource, WebsiteSource } from "./client";
 
 export type Chunk = {
     sourceId: string;
@@ -77,6 +77,20 @@ export class SourceProcessor {
         }));
     }
 
+    async chunkWebsite(websiteSource: WebsiteSource): Promise<Chunk[]> {
+        if (!websiteSource?.content) return [];
+        const textChunks = await this.textSplitter.splitText(websiteSource.content);
+        return textChunks.map((chunk, idx) => ({
+            sourceId: websiteSource.id,
+            content: chunk,
+            metadata: {
+                type: "website",
+                url: websiteSource.url,
+            },
+            chunkIndex: idx,
+        }));
+    }
+
     async chunkSource(source: Sources): Promise<Chunk[]> {
         let allChunks: Chunk[] = [];
         if (source.files && source.files.length > 0) {
@@ -93,6 +107,16 @@ export class SourceProcessor {
             const qaChunks = this.chunkQA(source.qa);
             allChunks.push(...qaChunks);
         }
+
+        if (source.websites && source.websites.length > 0) {
+            // since the website content is just a markdown string, we can use the same text splitter
+            // and just split the markdown string into chunks
+            for (const website of source.websites) {
+                const websiteChunks = await this.chunkWebsite(website);
+                allChunks.push(...websiteChunks);
+            }
+        }
+
         return allChunks;
     }
 } 

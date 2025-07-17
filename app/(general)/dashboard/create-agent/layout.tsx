@@ -8,7 +8,6 @@ import {
   Type,
   Globe,
   HelpCircle,
-  FileStack,
   Loader2,
 } from "lucide-react";
 import { cn, formatSize } from "@/lib/utils";
@@ -118,7 +117,6 @@ function SourcesSidebar() {
     files,
     websites,
     qa,
-    notion,
     totalFileSize,
     totalSize,
     maxSize,
@@ -180,14 +178,6 @@ function SourcesSidebar() {
           </div>
         )}
 
-        {notion && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileStack className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Notion</span>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="border-t pt-4 mt-4">
@@ -220,7 +210,7 @@ function SourcesSidebar() {
           className={cn(
             "w-full bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 dark:text-black text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center",
             (isCreating || !hasAnySource || isSizeLimitExceeded) &&
-              "opacity-70 cursor-not-allowed"
+            "opacity-70 cursor-not-allowed"
           )}
         >
           {isCreating ? (

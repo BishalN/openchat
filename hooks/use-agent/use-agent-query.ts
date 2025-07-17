@@ -10,12 +10,9 @@ export interface UseAgentQueryResult {
   initialConfig: AgentConfig | null;
 }
 
-export function useAgentQuery(agentId: string | number) {
+export function useAgentQuery(agentId: string) {
   const [initialConfig, setInitialConfig] = useState<AgentConfig | null>(null);
   const [error, setError] = useState<Error | null>(null);
-
-  const numericAgentId =
-    typeof agentId === "string" ? Number(agentId) : agentId;
 
   // Fetch agent data with TRPC
   const {
@@ -23,7 +20,7 @@ export function useAgentQuery(agentId: string | number) {
     isLoading,
     error: trpcError,
   } = trpc.agent.getById.useQuery(
-    { id: numericAgentId },
+    { id: agentId },
     {
       enabled: !!agentId,
     }

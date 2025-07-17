@@ -12,7 +12,7 @@ export function useAgentCreation() {
   const router = useRouter();
   const { toast } = useToast();
   const sourceStore = useSourceStore();
-  const { text, file: files, websites, qa, notion } = sourceStore;
+  const { text, file: files, websites, qa } = sourceStore;
 
   // Local state
   const [isCreating, setIsCreating] = useState(false);
@@ -125,8 +125,7 @@ export function useAgentCreation() {
       (!text &&
         files.length === 0 &&
         websites.length === 0 &&
-        !qa &&
-        !notion) ||
+        !qa) ||
       isCreating ||
       totalSize > maxSize
     ) {
@@ -143,7 +142,6 @@ export function useAgentCreation() {
         file: files,
         websites: websites,
         qa: qa,
-        notion: notion,
       });
 
       if (result && result.data && result.data.success) {
@@ -181,7 +179,6 @@ export function useAgentCreation() {
     files,
     websites,
     qa,
-    notion,
     isCreating,
     totalSize,
     maxSize,
@@ -190,7 +187,7 @@ export function useAgentCreation() {
 
   // Check if sources are available
   const hasAnySource =
-    !!text || files.length > 0 || websites.length > 0 || !!qa || !!notion;
+    !!text || files.length > 0 || websites.length > 0 || !!qa;
 
   // Check if size limit is exceeded
   const isSizeLimitExceeded = totalSize > maxSize;
@@ -202,7 +199,6 @@ export function useAgentCreation() {
       files,
       websites,
       qa,
-      notion,
       totalFileSize,
       totalSize,
       maxSize,

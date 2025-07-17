@@ -5,7 +5,7 @@ import { db } from "@/drizzle";
 import { embeddingsTable } from "@/drizzle/schema";
 import { embedMany } from "ai";
 import { google } from "@ai-sdk/google";
-import { SourceProcessor } from "./source-chunker";
+import { SourceProcessor } from "./source-processor";
 
 // Create Supabase admin client with service role
 const supabaseAdmin = createClient(

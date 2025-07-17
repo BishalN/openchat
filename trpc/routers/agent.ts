@@ -8,10 +8,10 @@ import {
 } from "@/drizzle/schema";
 import { desc, eq, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { createUpdateSchema, createSelectSchema } from "drizzle-zod";
+import FirecrawlApp, { ScrapeResponse } from '@mendable/firecrawl-js';
 
-const updateAgentSchema = createUpdateSchema(agentsTable);
-const baseSelectSchema = createSelectSchema(agentsTable);
+const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+
 
 export const agentRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -262,4 +262,24 @@ export const agentRouter = createTRPCRouter({
 
       return sourcesWithQA;
     }),
+
+
+  // add website source
+  // rather scrape the website and store the content in the db 
+
+  addWebsiteSource: protectedProcedure
+    .input(z.object({ url: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { url } = input;
+
+      // Scrape multiple websites (synchronous):
+      const scrapedUrl = await firecrawl.scrapeUrl(url, { formats: ['markdown'] });
+
+      if (!scrapedUrl.success) {
+        throw new Error(`Failed to scrape: ${scrapedUrl.error}`)
+      }
+
+      return scrapedUrl;
+    }),
+
 });

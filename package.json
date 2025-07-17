@@ -23,6 +23,7 @@
     "@langchain/community": "^0.3.41",
     "@langchain/core": "^0.3.45",
     "@langchain/langgraph": "^0.2.64",
+    "@mendable/firecrawl-js": "^1.29.1",
     "@mistralai/mistralai": "^1.7.4",
     "@opentelemetry/api-logs": "^0.203.0",
     "@opentelemetry/instrumentation": "^0.203.0",

@@ -21,7 +21,7 @@ export const fileSourceSchema = z.object({
 export const websiteSourceSchema = z.object({
   type: z.literal("website"),
   name: z.string(),
-  url: z.string().url(),
+  content: z.string(),
 });
 
 export const qaPairSchema = z.object({
@@ -36,19 +36,12 @@ export const qaSourceSchema = z.object({
   size: z.number().int().positive(),
 });
 
-export const notionSourceSchema = z.object({
-  type: z.literal("notion"),
-  name: z.string(),
-  url: z.string().url(),
-});
-
 // Main source store state schema
 export const sourceStoreSchema = z.object({
   text: textSourceSchema.nullable(),
   file: z.array(fileSourceSchema),
   websites: z.array(websiteSourceSchema),
   qa: qaSourceSchema.nullable(),
-  notion: notionSourceSchema.nullable(),
 });
 
 // If you want to infer types back from Zod
@@ -57,4 +50,3 @@ export type TextSource = z.infer<typeof textSourceSchema>;
 export type FileSource = z.infer<typeof fileSourceSchema>;
 export type WebsiteSource = z.infer<typeof websiteSourceSchema>;
 export type QASource = z.infer<typeof qaSourceSchema>;
-export type NotionSource = z.infer<typeof notionSourceSchema>;

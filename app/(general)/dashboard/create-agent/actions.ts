@@ -30,8 +30,9 @@ export const createAgent = authActionClient
   .action(
     async ({
       ctx: { user },
-      parsedInput: { file, notion, qa, text, websites },
+      parsedInput: { file, qa, text, websites },
     }) => {
+      console.log("request received", { file, qa, text, websites });
       try {
         const result = await db.transaction(async (tx) => {
           // Create agent
@@ -53,7 +54,6 @@ export const createAgent = authActionClient
           let textSource: SelectSource | undefined;
           let fileSource: SelectSource[] = [];
           let websitesSource: SelectSource[] = [];
-          let notionSource: SelectSource | undefined;
           let qaSource: SelectSource | undefined;
 
           // Insert text source
@@ -100,7 +100,7 @@ export const createAgent = authActionClient
                   type: "website" as const,
                   name: w.name,
                   details: {
-                    url: w.url,
+                    url: w.content,
                     // TODO: website content add later
                     title: "add later",
                     content: "add later",
@@ -125,23 +125,7 @@ export const createAgent = authActionClient
               .returning();
           }
 
-          // Insert notion source
-          if (notion) {
-            [notionSource] = await tx
-              .insert(sourcesTable)
-              .values({
-                agentId: agent.id,
-                type: "notion",
-                name: notion.name,
-                details: {
-                  pageId: notion.url,
-                  title: notion.name,
-                  // TODO: notion content add later
-                  content: "add later",
-                }
-              })
-              .returning();
-          }
+
 
           // Trigger the Inngest pipeline for processing instead of doing it here
           let data = await inngest.send({
@@ -175,15 +159,6 @@ export const createAgent = authActionClient
                     id: qaSource.id,
                     name: qaSource.name,
                     pairs: qa!.qaPairs,
-                  }
-                  : null,
-                notion: notionSource
-                  ? {
-                    id: notionSource.id,
-                    name: notionSource.name,
-                    pageId: "add later",
-                    title: "add later",
-                    content: "add later",
                   }
                   : null,
               },
