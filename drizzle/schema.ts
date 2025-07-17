@@ -48,6 +48,7 @@ export const agentsTable = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description"),
+  secretKey: text("secret_key"),
   userId: uuid("user_id")
     .notNull()
     .references(() => profilesTable.id, { onDelete: "cascade" }),

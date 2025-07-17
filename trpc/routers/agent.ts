@@ -9,6 +9,7 @@ import {
 import { desc, eq, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import FirecrawlApp, { ScrapeResponse } from '@mendable/firecrawl-js';
+import crypto from "crypto";
 
 const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
 
@@ -85,6 +86,7 @@ export const agentRouter = createTRPCRouter({
         .insert(agentsTable)
         .values({
           name: input.name,
+          secretKey: crypto.randomBytes(32).toString("hex"),
           description: input.description || null,
           userId: ctx.user.id,
           isPublic: input.isPublic,

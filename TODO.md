@@ -11,3 +11,8 @@ They should all be composing each other and not be so isolated from each other t
 
 
 and probably in retrain agents also use the use-source hook for state cuz that is super simple to use
+
+
+
+## Make the sources and retrain part in-accessible for now cuz there are too many bugs there
+### during showcase just don't show those things needs lots of work there;

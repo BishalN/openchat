@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { sourceStoreSchema } from "@/lib/validations/agent";
 import { inngest } from "@/inngest/client";
+import crypto from "crypto";
 
 const authActionClient = createSafeActionClient().use(async ({ next }) => {
   const supabase = await createClient();
@@ -40,6 +41,7 @@ export const createAgent = authActionClient
           const [agent] = await tx
             .insert(agentsTable)
             .values({
+              secretKey: crypto.randomBytes(32).toString("hex"),
               name:
                 text?.name ||
                 qa?.name ||
@@ -82,9 +84,9 @@ export const createAgent = authActionClient
                   type: "file" as const,
                   name: f.name,
                   details: {
-                    fileUrl: f.fileUrl,
-                    fileSize: f.fileSize,
-                    mimeType: f.mimeType,
+                    fileUrl: f.fileUrl!,
+                    fileSize: f.fileSize!,
+                    mimeType: f.mimeType!,
                   }
                 }))
               )
@@ -101,9 +103,9 @@ export const createAgent = authActionClient
                   type: "website" as const,
                   name: w.name,
                   details: {
-                    url: w.name,
+                    url: w.url!,
                     title: w.name,
-                    content: w.content,
+                    content: w.content!,
                   }
                 }))
               )
