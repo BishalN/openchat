@@ -46,19 +46,12 @@ export default function CreateAgentLayout({
             label="Q&A"
             active={pathname === "/dashboard/create-agent/qa"}
           />
-          {/* TODO: Add to roadmap */}
-          {/* <NavItem
+          <NavItem
             href="/dashboard/create-agent/website"
             icon={<Globe className="h-5 w-5" />}
             label="Website"
             active={pathname === "/dashboard/create-agent/website"}
           />
-          <NavItem
-            href="/dashboard/create-agent/notion"
-            icon={<FileStack className="h-5 w-5" />}
-            label="Notion"
-            active={pathname === "/dashboard/create-agent/notion"}
-          /> */}
         </div>
 
         {/* Main content area */}

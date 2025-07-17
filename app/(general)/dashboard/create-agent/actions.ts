@@ -7,6 +7,7 @@ import {
   sourcesTable,
   type SelectSource,
   FileSourceDetails,
+  WebsiteSourceDetails,
 } from "@/drizzle/schema";
 import { createClient } from "@/utils/supabase/server";
 import { sourceStoreSchema } from "@/lib/validations/agent";
@@ -100,10 +101,9 @@ export const createAgent = authActionClient
                   type: "website" as const,
                   name: w.name,
                   details: {
-                    url: w.content,
-                    // TODO: website content add later
-                    title: "add later",
-                    content: "add later",
+                    url: w.name,
+                    title: w.name,
+                    content: w.content,
                   }
                 }))
               )
@@ -150,9 +150,9 @@ export const createAgent = authActionClient
                 websites: websitesSource.map((w) => ({
                   id: w.id,
                   name: w.name,
-                  url: "add later",
-                  content: "add later",
-                  title: "add later",
+                  url: w.name,
+                  content: (w.details as WebsiteSourceDetails).content,
+                  title: w.name,
                 })),
                 qa: qaSource
                   ? {

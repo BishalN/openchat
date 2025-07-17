@@ -90,9 +90,8 @@ export default function FilesPage() {
 
       {/* File upload area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-12 text-center flex flex-col items-center justify-center gap-2 ${
-          isUploading ? "opacity-50 pointer-events-none" : ""
-        }`}
+        className={`border-2 border-dashed rounded-lg p-12 text-center flex flex-col items-center justify-center gap-2 ${isUploading ? "opacity-50 pointer-events-none" : ""
+          }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >

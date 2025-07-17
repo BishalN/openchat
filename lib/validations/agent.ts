@@ -12,16 +12,17 @@ export const fileSourceSchema = z.object({
   id: z.string(),
   type: z.literal("file"),
   name: z.string(),
-  fileUrl: z.string().url(),
-  fileSize: z.number().int().positive(),
-  mimeType: z.string(),
-  createdAt: z.number(),
+  fileUrl: z.string().url().optional(),
+  fileSize: z.number().int().positive().optional(),
+  mimeType: z.string().optional(),
+  createdAt: z.number().optional(),
 });
 
 export const websiteSourceSchema = z.object({
   type: z.literal("website"),
   name: z.string(),
-  content: z.string(),
+  content: z.string().optional(),
+  url: z.string().url().optional(),
 });
 
 export const qaPairSchema = z.object({

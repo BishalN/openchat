@@ -148,6 +148,9 @@ export function useSources({ agentId }: UseSourcesProps) {
 
   // Function to trigger retraining
   const handleRetrainAgent = useCallback(async () => {
+    console.log("handleRetrainAgent", agentId);
+    console.log("sourcesStore", JSON.stringify(sourcesStore.sources, null, 2));
+
     // Get current sources from the store to send for retraining
     const currentSources = sourcesStore.sources;
     if (currentSources.length === 0 || isRetraining) {
@@ -180,8 +183,12 @@ export function useSources({ agentId }: UseSourcesProps) {
     try {
       const result = await retrainAgent({
         agentId: agentId,
-        ...(sourcesPayload as any),
+        file: sourcesPayload.file,
+        text: sourcesPayload.text,
+        websites: sourcesPayload.websites,
+        qa: sourcesPayload.qa,
       });
+      console.log("result", JSON.stringify(result, null, 2));
 
       if (result?.data?.success) {
         // If it is success and there is no runId than it means retraining is not needed so we can just return

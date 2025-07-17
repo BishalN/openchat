@@ -82,18 +82,12 @@ export type QASourceDetails = {
   pairs: Array<{ question: string; answer: string }>;
 };
 
-export type NotionSourceDetails = {
-  pageId: string;
-  title?: string;
-  content?: string;
-};
 
 export type SourceDetails =
   | FileSourceDetails
   | TextSourceDetails
   | WebsiteSourceDetails
   | QASourceDetails
-  | NotionSourceDetails;
 
 export const sourcesTable = pgTable("sources", {
   id: uuid("id").primaryKey().defaultRandom(),

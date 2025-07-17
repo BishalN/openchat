@@ -39,7 +39,6 @@ const SourceIcon = ({ type }: { type: Source["type"] }) => {
 export default function SourcesLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agentId } = useParams();
-  const agentIdNumber = agentId as string;
 
   const {
     sources,
@@ -51,7 +50,7 @@ export default function SourcesLayout({ children }: { children: ReactNode }) {
     handleRetrainAgent,
     isUploading,
   } = useSources({
-    agentId: agentIdNumber,
+    agentId: agentId as string,
   });
 
   const basePath = `/dashboard/agent/${agentId}/sources`;

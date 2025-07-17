@@ -23,6 +23,7 @@ interface WebsiteSource {
   type: "website";
   name: string;
   url: string;
+  content: string;
 }
 
 interface QASource {
@@ -35,18 +36,12 @@ interface QASource {
   size: number; // in bytes
 }
 
-interface NotionSource {
-  type: "notion";
-  name: string;
-  url: string;
-}
 
 interface SourceStoreState {
   text: TextSource | null;
   file: FileSource[];
   websites: WebsiteSource[];
   qa: QASource | null;
-  notion: NotionSource | null;
 
   // Text source actions
   setTextSource: (content: string, name?: string) => void;
@@ -62,7 +57,8 @@ interface SourceStoreState {
 
   // Website source actions
   addWebsiteSource: (url: string, name?: string) => void;
-  removeWebsiteSource: (index: number) => void;
+  removeWebsiteSource: (url: string) => void;
+  updateWebsiteSource: (url: string, content: string) => void;
   clearWebsiteSources: () => void;
 
   // QA source actions
@@ -73,9 +69,6 @@ interface SourceStoreState {
   addQAPair: (question: string, answer: string) => void;
   updateQAPair: (index: number, question: string, answer: string) => void;
   removeQAPair: (index: number) => void;
-
-  // Notion source actions
-  setNotionSource: (url: string, name?: string) => void;
 
   // Common actions
   resetSourceData: () => void;
@@ -107,7 +100,6 @@ export const useSourceStore = create<SourceStoreState>()((set, get) => ({
   file: [],
   websites: [],
   qa: null,
-  notion: null,
 
   // Text source actions
   setTextSource: (
@@ -154,13 +146,19 @@ export const useSourceStore = create<SourceStoreState>()((set, get) => ({
           type: "website",
           url,
           name: name || new URL(url).hostname,
+          content: "",
         },
       ],
     })),
 
-  removeWebsiteSource: (index) =>
+  removeWebsiteSource: (url) =>
     set((state) => ({
-      websites: state.websites.filter((_, i) => i !== index),
+      websites: state.websites.filter((website) => website.url !== url),
+    })),
+
+  updateWebsiteSource: (url, content) =>
+    set((state) => ({
+      websites: state.websites.map((website) => website.url === url ? { ...website, content } : website),
     })),
 
   clearWebsiteSources: () =>
@@ -226,25 +224,11 @@ export const useSourceStore = create<SourceStoreState>()((set, get) => ({
     }
   },
 
-  // Notion source actions
-  setNotionSource: (
-    url,
-    name = `Notion source ${new Date().toLocaleDateString()}`
-  ) =>
-    set(() => ({
-      notion: {
-        type: "notion",
-        url,
-        name,
-      },
-    })),
-
   resetSourceData: () =>
     set({
       text: null,
       file: [],
       websites: [],
       qa: null,
-      notion: null,
     }),
 }));
