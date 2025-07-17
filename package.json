@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "ingest": "npx inngest-cli@latest dev --no-poll",
     "be": "__NEXT_TEST_MODE=true pnpm build",
-    "pkit:add": "node ./add-prompt-kit-component.js"
+    "pkit:add": "node ./add-prompt-kit-component.js",
+    "verify-identity": "npx tsx ./verify-identity-script.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",

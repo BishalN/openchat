@@ -33,6 +33,19 @@ export default function EmbeddableChatWidget({
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("conversationId");
 
+  // Parse identity data from query param
+  let identityData: any = undefined;
+  const dataParam = searchParams.get("data");
+  if (dataParam) {
+    try {
+      identityData = JSON.parse(decodeURIComponent(dataParam));
+    } catch (e) {
+      // Optionally log or ignore
+      identityData = undefined;
+    }
+  }
+  console.log(JSON.stringify(identityData, null, 2));
+
   // Initialize chat with AI SDK
   const {
     messages,
@@ -47,6 +60,7 @@ export default function EmbeddableChatWidget({
       agentId: agentId,
       stream: true,
       conversationId,
+      ...(identityData ? { identity: identityData } : {}),
     },
     initialMessages: [
       {
@@ -59,9 +73,11 @@ export default function EmbeddableChatWidget({
   useEffect(() => {
     const lastDataItem = data?.[data.length - 1];
     if (lastDataItem && isNewConversationCreated(lastDataItem)) {
-      router.push(`?conversationId=${lastDataItem.conversationId}`);
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("conversationId", lastDataItem.conversationId);
+      router.push(`?${params.toString()}`);
     }
-  }, [data, router]);
+  }, [data, router, searchParams]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {

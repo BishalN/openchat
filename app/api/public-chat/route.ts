@@ -1,22 +1,31 @@
 import { findRelevantContent } from "@/lib/ai/embedding";
 import { google } from "@ai-sdk/google";
-import { appendResponseMessages, createDataStreamResponse, Message, streamText, ToolSet } from "ai";
+import { appendResponseMessages, createDataStreamResponse, Message, streamText } from "ai";
 import { z } from "zod";
-import { conversationsTable, messagesTable } from "@/drizzle/schema";
+import { agentsTable, conversationsTable, Identity } from "@/drizzle/schema";
 import { db } from "@/drizzle";
 import { errorHandler } from "../chat/utils";
-import { upsertConversation, upsertGuestConversation } from "@/drizzle/queries";
+import { upsertGuestConversation } from "@/drizzle/queries";
 import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { eq } from "drizzle-orm";
 import { Langfuse } from "langfuse";
+import crypto from "crypto";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
 
-
 const langfuse = new Langfuse({
   environment: process.env.NODE_ENV ?? "development",
 });
+
+function verifyIdentity(identity: Identity, secret_key: string) {
+  const computedHash = crypto
+    .createHmac("sha256", secret_key)
+    .update(identity.user_id)
+    .digest("hex");
+
+  return computedHash === identity.user_hash;
+}
 
 
 export async function POST(req: Request) {
@@ -25,12 +34,28 @@ export async function POST(req: Request) {
       messages: Array<Message>;
       conversationId?: string;
       agentId: string;
+      identity?: Identity;
     };
 
-    const { messages, agentId, conversationId } = body;
+    const { messages, agentId, conversationId, identity } = body;
     if (!messages.length) {
       return new Response("No messages provided", { status: 400 });
     }
+
+    // get the secret key from the agent
+    const agent = await db.query.agentsTable.findFirst({
+      where: eq(agentsTable.id, agentId),
+    });
+    if (!agent) {
+      return new Response("Agent not found", { status: 404 });
+    }
+    const secretKey = agent.secretKey!;
+
+    // Verify the identity
+    if (identity && !verifyIdentity(identity, secretKey)) {
+      return new Response("Invalid identity", { status: 401 });
+    }
+
     // If no conversationId is provided, create a new conversation with the user's message
     let currentConversationId = conversationId;
     if (!currentConversationId) {
@@ -40,6 +65,7 @@ export async function POST(req: Request) {
         title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
         messages: messages, // Only save the user's message initially
         agentId,
+        identity
       });
       currentConversationId = newConversationId;
     } else {
@@ -112,6 +138,7 @@ export async function POST(req: Request) {
               title: lastMessage.content.slice(0, 50) + "...",
               messages: updatedMessages,
               agentId,
+              identity
             });
 
             await langfuse.flushAsync();

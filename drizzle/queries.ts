@@ -1,5 +1,5 @@
 import { db } from ".";
-import { conversationsTable, messagesTable } from "./schema";
+import { conversationsTable, Identity, messagesTable } from "./schema";
 import type { Message } from "ai";
 import { eq, and } from "drizzle-orm";
 
@@ -53,8 +53,9 @@ export const upsertGuestConversation = async (opts: {
     title: string;
     messages: Message[];
     agentId: string;
+    identity?: Identity;
 }) => {
-    const { conversationId, title, messages: newMessages, agentId } = opts;
+    const { conversationId, title, messages: newMessages, agentId, identity } = opts;
 
     // First, check if the conversation exists and belongs to the user
     const existingConversation = await db.query.conversationsTable.findFirst({
@@ -74,6 +75,7 @@ export const upsertGuestConversation = async (opts: {
             id: conversationId,
             title,
             agentId,
+            identity,
         });
     }
 

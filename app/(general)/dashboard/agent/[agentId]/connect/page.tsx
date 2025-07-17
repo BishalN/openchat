@@ -114,25 +114,27 @@ export default function ConnectPage() {
   // Embed option state
   const [selectedEmbed, setSelectedEmbed] = useState<"chatbubble" | "iframe">("chatbubble");
 
-  // Chat bubble embed code (script tag)
   const chatBubbleCode = useMemo(
-    () =>
-      `<script>
-    window.chatbuddyAgentId = "${agentId}"; // Set this before loading the script
-</script>
-<script src="http://localhost:3000/embed.js"></script>
-<script>
-    window.chatbuddy("setUser", {
-      user_id: "user123",
-      user_hash: "abc123", // this is the hash of the user_id, should be generated on the server
-      user_metadata: {
-        "name": "John Doe",
-        "email": "john@example.com",
-        "company": "Acme Inc",
-        // Add any other relevant user information
-      }
-    });
-</script>`,
+    () => {
+      // Example identity data
+      const data = {
+        user_id: "1234567890",
+        user_hash: "1234567890", // hash of user_id, generated on the server
+        user_metadata: {
+          name: "John Doe",
+          email: "john@example.com",
+          company: "Acme Inc",
+          // Add any other relevant user information
+        },
+      };
+      const encodedData = encodeURIComponent(JSON.stringify(data));
+      return `<iframe
+  src="${process.env.NEXT_PUBLIC_BASE_URL}/chatbot-iframe/${agentId}/?data=${encodedData}"
+  width="100%"
+  style="height: 95vh"
+  frameborder="0"
+></iframe>`;
+    },
     [agentId]
   );
 
@@ -245,15 +247,50 @@ export default function ConnectPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Embed a chat bubble</CardTitle>
-                  <CardDescription>Paste this code before the closing <code>&lt;/body&gt;</code> tag on your website.</CardDescription>
+                  <CardDescription>Paste this code before the closing <code>&lt;/body&gt;</code> tag on your website.<br />
+                    <span className="block mt-2 text-xs text-muted-foreground">
+                      <b>Identity Verification:</b> You can pass user info for identity verification using the <code>data</code> query parameter. Example below:
+                    </span>
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="max-w-xl">
                   <div className="mb-4 bg-muted/50 rounded-md p-4 font-mono text-sm overflow-auto">
                     {chatBubbleCode}
                   </div>
                   <Button variant="secondary" onClick={() => copyEmbedCode(chatBubbleCode)}>
                     Copy Code
                   </Button>
+                  <div className="mt-4">
+                    <div className="mb-2 font-semibold text-sm">Example <code>data</code> object:</div>
+                    <pre className="bg-muted/50 rounded-md p-4 font-mono text-xs overflow-auto whitespace-pre-wrap">{`
+{
+  user_id: "1234567890",
+  user_hash: "1234567890", // this is the hash of the user_id, should be generated on the server
+  user_metadata: {
+    name: "John Doe",
+    email: "john@example.com",
+    company: "Acme Inc"
+    // Add any other relevant user information
+  }
+}`}</pre>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <b>How to use:</b> JSON.stringify your data object, then encodeURIComponent it, and append as <code>?data=...</code> in the iframe <code>src</code>.<br />
+                      <b>Example in JS:</b>
+                      <pre className="bg-muted/50 rounded-md p-4 font-mono text-xs overflow-auto whitespace-pre-wrap">{`const data = {
+  user_id: "1234567890",
+  user_hash: "1234567890",
+  user_metadata: {
+    name: "John Doe",
+    email: "john@example.com",
+    company: "Acme Inc"
+  }
+};
+const encodedData = encodeURIComponent(JSON.stringify(data));
+const iframeSrc = \
+  \`${process.env.NEXT_PUBLIC_BASE_URL}/chatbot-iframe/${agentId}/?data=\${encodedData}\`;
+`}</pre>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

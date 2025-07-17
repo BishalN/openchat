@@ -129,6 +129,12 @@ export const embeddingsTable = pgTable(
   ]
 );
 
+export type Identity = {
+  user_id: string;
+  user_hash: string;
+  user_metadata: Record<string, any>;
+};
+
 export const conversationsTable = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),
   agentId: uuid("agent_id")
@@ -136,6 +142,7 @@ export const conversationsTable = pgTable("conversations", {
     .references(() => agentsTable.id, { onDelete: "cascade" }),
   userId: uuid("user_id")
     .references(() => profilesTable.id, { onDelete: "cascade" }),
+  identity: jsonb("identity").$type<Identity>(),
   title: text("title"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at")
