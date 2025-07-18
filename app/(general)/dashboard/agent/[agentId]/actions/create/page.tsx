@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
@@ -9,26 +9,58 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Trash } from "lucide-react";
+import { useCustomActions } from "@/hooks/use-custom-actions";
+import { toast } from "sonner";
 
 // General Section Component
-function GeneralSection() {
+function GeneralSection({
+    actionName,
+    setActionName,
+    whenToUse,
+    setWhenToUse,
+    onSave,
+    isSaving,
+}: {
+    actionName: string;
+    setActionName: (name: string) => void;
+    whenToUse: string;
+    setWhenToUse: (text: string) => void;
+    onSave: () => void;
+    isSaving: boolean;
+}) {
     return (
         <div className="space-y-4 py-2">
             <div>
                 <label className="block text-sm font-medium mb-1">Action Name</label>
-                <Input placeholder="e.g. Get Weather" />
+                <Input
+                    placeholder="e.g. Get Weather"
+                    value={actionName}
+                    onChange={(e) => setActionName(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground mt-1">A descriptive name for this action. This will help the AI agent know when to use it.</p>
             </div>
             <div>
                 <label className="block text-sm font-medium mb-1">When to use</label>
-                <Textarea placeholder="Describe when the AI agent should use this action. Include examples." rows={4} />
+                <Textarea
+                    placeholder="Describe when the AI agent should use this action. Include examples."
+                    rows={4}
+                    value={whenToUse}
+                    onChange={(e) => setWhenToUse(e.target.value)}
+                />
                 <p className="text-xs text-muted-foreground mt-1">Detailed description explaining when the AI agent should use this action and API. Include examples of the data this action provides and customer queries it helps answer.</p>
             </div>
-            <Button className="mt-4">Save and Continue</Button>
+            <Button
+                className="mt-4"
+                onClick={onSave}
+                disabled={isSaving || !actionName.trim() || !whenToUse.trim()}
+            >
+                {isSaving ? "Saving..." : "Save and Continue"}
+            </Button>
         </div>
     );
 }
 
+// TODO: infer the parameters from the API URL
 // API Section Component
 function ApiSection({
     dataInputs,
@@ -47,13 +79,15 @@ function ApiSection({
     addKeyValue,
     removeKeyValue,
     updateKeyValue,
+    onSave,
+    isSaving,
 }: {
     dataInputs: Array<{ name: string; type: string; description: string; array: boolean }>;
     addDataInput: () => void;
     removeDataInput: (idx: number) => void;
     updateDataInput: (idx: number, field: string, value: any) => void;
-    apiMethod: string;
-    setApiMethod: (m: string) => void;
+    apiMethod: "GET" | "POST" | "PUT" | "DELETE";
+    setApiMethod: (m: "GET" | "POST" | "PUT" | "DELETE") => void;
     apiUrl: string;
     setApiUrl: (u: string) => void;
     apiTab: string;
@@ -64,6 +98,8 @@ function ApiSection({
     addKeyValue: (type: string) => void;
     removeKeyValue: (type: string, idx: number) => void;
     updateKeyValue: (type: string, idx: number, field: string, value: any) => void;
+    onSave: () => void;
+    isSaving: boolean;
 }) {
     return (
         <div className="space-y-6 py-2">
@@ -78,47 +114,49 @@ function ApiSection({
                         + Add data input
                     </Button>
                 </div>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className="text-center">Array</TableHead>
-                                <TableHead></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {dataInputs.map((row, idx) => (
-                                <TableRow key={idx}>
-                                    <TableCell>
-                                        <Input value={row.name} onChange={e => updateDataInput(idx, "name", e.target.value)} placeholder="e.g. status" />
-                                    </TableCell>
-                                    <TableCell>
-                                        <select className="border rounded px-2 py-1 text-sm w-full" value={row.type} onChange={e => updateDataInput(idx, "type", e.target.value)}>
-                                            <option>Text</option>
-                                            <option>Number</option>
-                                            <option>Boolean</option>
-                                            <option>Date</option>
-                                        </select>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Input value={row.description} onChange={e => updateDataInput(idx, "description", e.target.value)} placeholder="e.g. active | canceled" />
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <input type="checkbox" checked={row.array} onChange={e => updateDataInput(idx, "array", e.target.checked)} />
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Button size="icon" variant="ghost" onClick={() => removeDataInput(idx)} aria-label="Remove row">
-                                            <Trash className="w-4 h-4" />
-                                        </Button>
-                                    </TableCell>
+                {dataInputs.length > 0 && (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className="text-center">Array</TableHead>
+                                    <TableHead></TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
+                            </TableHeader>
+                            <TableBody>
+                                {dataInputs.map((row, idx) => (
+                                    <TableRow key={idx}>
+                                        <TableCell>
+                                            <Input value={row.name} onChange={e => updateDataInput(idx, "name", e.target.value)} placeholder="e.g. status" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <select className="border rounded px-2 py-1 text-sm w-full" value={row.type} onChange={e => updateDataInput(idx, "type", e.target.value)}>
+                                                <option>Text</option>
+                                                <option>Number</option>
+                                                <option>Boolean</option>
+                                                <option>Date</option>
+                                            </select>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input value={row.description} onChange={e => updateDataInput(idx, "description", e.target.value)} placeholder="e.g. active | canceled" />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <input type="checkbox" checked={row.array} onChange={e => updateDataInput(idx, "array", e.target.checked)} />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Button size="icon" variant="ghost" onClick={() => removeDataInput(idx)} aria-label="Remove row">
+                                                <Trash className="w-4 h-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
             </div>
 
             {/* API Request */}
@@ -126,7 +164,7 @@ function ApiSection({
                 <div className="font-medium mb-1">API request</div>
                 <div className="text-xs text-muted-foreground mb-2 max-w-2xl">The API endpoint that should be called by the AI Agent to retrieve data or to send updates. You can include data inputs (variables) collected from the user in the URL or the request body.</div>
                 <div className="flex gap-2 mb-2 items-center">
-                    <select className="border rounded px-2 py-1 text-sm" value={apiMethod} onChange={e => setApiMethod(e.target.value)}>
+                    <select className="border rounded px-2 py-1 text-sm" value={apiMethod} onChange={e => setApiMethod(e.target.value as "GET" | "POST" | "PUT" | "DELETE")}>
                         <option>GET</option>
                         <option>POST</option>
                         <option>PUT</option>
@@ -174,7 +212,7 @@ function ApiSection({
                     </Button>
                 </div>
             </div>
-            <Button className="mt-4">Save and continue</Button>
+            <Button onClick={onSave} className="mt-4">Save and continue</Button>
         </div>
     );
 }
@@ -192,8 +230,12 @@ function flattenJson(obj: any, prefix = "", res: Record<string, string> = {}) {
 
 function TestResponseSection({
     dataInputs,
+    config,
+    onTestResult,
 }: {
     dataInputs: Array<{ name: string; type: string; description: string; array: boolean }>;
+    config: any;
+    onTestResult: (pairs: { key: string; value: string }[]) => void;
 }) {
     // Mode: "live" or "example"
     const [mode, setMode] = useState("live");
@@ -345,10 +387,53 @@ function TestResponseSection({
 
 function DataAccessSection({
     responsePairs,
+    dataAccessType,
+    setDataAccessType,
+    allowedFields,
+    setAllowedFields,
+    onSave,
+    isSaving,
 }: {
     responsePairs: { key: string; value: string }[];
+    dataAccessType: "full" | "limited";
+    setDataAccessType: (type: "full" | "limited") => void;
+    allowedFields: string[];
+    setAllowedFields: (fields: string[]) => void;
+    onSave: () => void;
+    isSaving: boolean;
 }) {
-    const [access, setAccess] = useState("full");
+    const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(allowedFields));
+
+    // Handle field selection
+    const toggleField = (fieldKey: string) => {
+        const newSelected = new Set(selectedFields);
+        if (newSelected.has(fieldKey)) {
+            newSelected.delete(fieldKey);
+        } else {
+            newSelected.add(fieldKey);
+        }
+        setSelectedFields(newSelected);
+    };
+
+    // Select all fields when switching to limited access
+    const handleAccessChange = (newAccess: "full" | "limited") => {
+        setDataAccessType(newAccess);
+        if (newAccess === "limited") {
+            // Pre-select all fields when switching to limited
+            const allFields = responsePairs.map(pair => pair.key);
+            setSelectedFields(new Set(allFields));
+            setAllowedFields(allFields);
+        } else {
+            setSelectedFields(new Set());
+            setAllowedFields([]);
+        }
+    };
+
+    // Update allowed fields when selection changes
+    useEffect(() => {
+        setAllowedFields(Array.from(selectedFields));
+    }, [selectedFields, setAllowedFields]);
+
     return (
         <div className="space-y-6 py-2">
             {/* Radio group for data access */}
@@ -357,8 +442,8 @@ function DataAccessSection({
                     <input
                         type="radio"
                         name="data-access"
-                        checked={access === "full"}
-                        onChange={() => setAccess("full")}
+                        checked={dataAccessType === "full"}
+                        onChange={() => handleAccessChange("full")}
                         className="accent-primary mt-1"
                     />
                     <span>
@@ -370,8 +455,8 @@ function DataAccessSection({
                     <input
                         type="radio"
                         name="data-access"
-                        checked={access === "limited"}
-                        onChange={() => setAccess("limited")}
+                        checked={dataAccessType === "limited"}
+                        onChange={() => handleAccessChange("limited")}
                         className="accent-primary mt-1"
                     />
                     <span>
@@ -381,47 +466,148 @@ function DataAccessSection({
                 </label>
             </div>
 
-            {/* Table for response pairs */}
-            <div className="overflow-x-auto rounded border border-border bg-background">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-1/2">Name</TableHead>
-                            <TableHead>Test response</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {responsePairs.map(({ key, value }) => (
-                            <TableRow key={key}>
-                                <TableCell>{key}</TableCell>
-                                <TableCell>{value}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
+            {/* Field selection for limited access */}
+            {dataAccessType === "limited" && (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="font-medium">Select accessible fields</div>
+                            <div className="text-xs text-muted-foreground">Choose which fields the AI agent can access from the API response</div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedFields(new Set(responsePairs.map(pair => pair.key)))}
+                            >
+                                Select All
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedFields(new Set())}
+                            >
+                                Clear All
+                            </Button>
+                        </div>
+                    </div>
 
-            <Button className="mt-2" size="sm" variant="default">Save</Button>
+                    <div className="overflow-x-auto rounded border border-border bg-background">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedFields.size === responsePairs.length && responsePairs.length > 0}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedFields(new Set(responsePairs.map(pair => pair.key)));
+                                                } else {
+                                                    setSelectedFields(new Set());
+                                                }
+                                            }}
+                                            className="rounded"
+                                        />
+                                    </TableHead>
+                                    <TableHead className="w-1/2">Field Name</TableHead>
+                                    <TableHead>Test Value</TableHead>
+                                    <TableHead className="w-24">Access</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {responsePairs.map(({ key, value }) => (
+                                    <TableRow key={key}>
+                                        <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedFields.has(key)}
+                                                onChange={() => toggleField(key)}
+                                                className="rounded"
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-mono text-sm">{key}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{value}</TableCell>
+                                        <TableCell>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${selectedFields.has(key)
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-red-100 text-red-800"
+                                                }`}>
+                                                {selectedFields.has(key) ? "Allowed" : "Blocked"}
+                                            </span>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
+
+            {/* Summary for full access */}
+            {dataAccessType === "full" && (
+                <div className="overflow-x-auto rounded border border-border bg-background">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-1/2">Field Name</TableHead>
+                                <TableHead>Test Value</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {responsePairs.map(({ key, value }) => (
+                                <TableRow key={key}>
+                                    <TableCell className="font-mono text-sm">{key}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">{value}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+
+            <Button disabled={isSaving} onClick={onSave} className="mt-2" size="sm" variant="default">
+                {isSaving ? "Saving..." : "Save"}
+            </Button>
         </div>
     );
 }
 
+// TODO: use react-hook-form with zod resolver to validate the form
 export default function CreateCustomActionPage() {
     const router = useRouter();
+    const params = useParams();
+    const agentId = params.agentId as string;
+
+    // Use the custom actions hook
+    const { createAction, isCreating } = useCustomActions(agentId);
+
     const [openSection, setOpenSection] = useState("general");
 
+    // Form state
+    const [actionName, setActionName] = useState("");
+    const [whenToUse, setWhenToUse] = useState("");
+
     // Data input table state
-    const [dataInputs, setDataInputs] = useState([
-        { name: "", type: "Text", description: "", array: false },
-    ]);
+    const [dataInputs, setDataInputs] = useState<Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>>([]);
+
     // API request state
-    const [apiMethod, setApiMethod] = useState("GET");
+    const [apiMethod, setApiMethod] = useState<"GET" | "POST" | "PUT" | "DELETE">("GET");
     const [apiUrl, setApiUrl] = useState("");
+
     // Tabs for params/headers/body
     const [apiTab, setApiTab] = useState("parameters");
-    const [parameters, setParameters] = useState<Array<{ key: string; value: string }>>([]); // [{key, value}]
+    const [parameters, setParameters] = useState<Array<{ key: string; value: string }>>([]);
     const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>([]);
     const [body, setBody] = useState<Array<{ key: string; value: string }>>([]);
+
+    // Test response state
+    const [kvPairs, setKvPairs] = useState<{ key: string; value: string }[]>([]);
+    const [exampleResponse, setExampleResponse] = useState("");
+
+    // Data access state
+    const [dataAccessType, setDataAccessType] = useState<"full" | "limited">("full");
+    const [allowedFields, setAllowedFields] = useState<string[]>([]);
 
     // Data input handlers
     const addDataInput = () => setDataInputs([...dataInputs, { name: "", type: "Text", description: "", array: false }]);
@@ -445,18 +631,79 @@ export default function CreateCustomActionPage() {
         if (type === "body") setBody(body.map((row, i) => i === idx ? { ...row, [field]: value } : row));
     };
 
-    // For DataAccessSection, use kvPairs from TestResponseSection as mock
-    const [kvPairs, setKvPairs] = useState<{ key: string; value: string }[]>([
-        { key: "success", value: "true" },
-    ]);
+    // Handle test result
+    const handleTestResult = (pairs: { key: string; value: string }[]) => {
+        console.log("test result", pairs);
+        setKvPairs(pairs);
+    };
+
+    // Create config object
+    const createConfig = () => ({
+        dataInputs,
+        apiMethod,
+        apiUrl,
+        parameters,
+        headers,
+        body,
+        dataAccessType,
+        allowedFields: dataAccessType === "limited" ? allowedFields : undefined,
+        exampleResponse,
+    });
+
+    // Handle save for each section
+    const handleGeneralSave = () => {
+        console.log("general save");
+        if (!actionName.trim() || !whenToUse.trim()) {
+            toast("Please fill in all required fields", {
+                description: "Action name and when to use are required",
+                className: "bg-red-500 text-white",
+            });
+            return;
+        }
+        setOpenSection("api");
+    };
+
+    const handleApiSave = () => {
+        console.log("api save");
+        if (!apiUrl.trim()) {
+            toast("Please enter a valid API URL", {
+                description: "The API URL is required",
+                className: "bg-red-500 text-white",
+            });
+            return;
+        }
+        setOpenSection("test");
+    };
+
+    const handleTestSave = () => {
+        setOpenSection("data-access");
+    };
+
+    const handleDataAccessSave = () => {
+        console.log("data access save");
+        if (dataAccessType === "limited" && allowedFields.length === 0) {
+            toast("Please select at least one field for limited access", {
+                description: "At least one field is required for limited access",
+                className: "bg-red-500 text-white",
+            });
+            return;
+        }
+
+        // Create the custom action
+        const config = createConfig();
+        console.log("config", JSON.stringify(config, null, 2));
+        createAction({
+            agentId,
+            name: actionName,
+            whenToUse,
+            config,
+        });
+    };
 
     return (
         <div>
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Back">
-                    <span className="text-lg">←</span>
-                </Button>
+            <div className="flex items-center gap-4 mb-2">
                 <h1 className="text-xl font-bold">Create Custom Action</h1>
             </div>
 
@@ -467,7 +714,14 @@ export default function CreateCustomActionPage() {
                     <AccordionItem value="general">
                         <AccordionTrigger>General</AccordionTrigger>
                         <AccordionContent>
-                            <GeneralSection />
+                            <GeneralSection
+                                actionName={actionName}
+                                setActionName={setActionName}
+                                whenToUse={whenToUse}
+                                setWhenToUse={setWhenToUse}
+                                onSave={handleGeneralSave}
+                                isSaving={false}
+                            />
                         </AccordionContent>
                     </AccordionItem>
                 </Card>
@@ -483,17 +737,22 @@ export default function CreateCustomActionPage() {
                                 removeDataInput={removeDataInput}
                                 updateDataInput={updateDataInput}
                                 apiMethod={apiMethod}
-                                setApiMethod={setApiMethod}
+                                setApiMethod={(m: "GET" | "POST" | "PUT" | "DELETE") => setApiMethod(m)}
                                 apiUrl={apiUrl}
                                 setApiUrl={setApiUrl}
                                 apiTab={apiTab}
                                 setApiTab={setApiTab}
+                                // TODO: infer the parameters from the API URL
+                                // given (https://wttr.in/\{\{city}}?format=j1)
+                                // create format as param 
                                 parameters={parameters}
                                 headers={headers}
                                 body={body}
                                 addKeyValue={addKeyValue}
                                 removeKeyValue={removeKeyValue}
                                 updateKeyValue={updateKeyValue}
+                                onSave={handleApiSave}
+                                isSaving={false}
                             />
                         </AccordionContent>
                     </AccordionItem>
@@ -504,7 +763,11 @@ export default function CreateCustomActionPage() {
                     <AccordionItem value="test">
                         <AccordionTrigger>Test Response</AccordionTrigger>
                         <AccordionContent>
-                            <TestResponseSection dataInputs={dataInputs} />
+                            <TestResponseSection
+                                dataInputs={dataInputs}
+                                config={createConfig()}
+                                onTestResult={handleTestResult}
+                            />
                         </AccordionContent>
                     </AccordionItem>
                 </Card>
@@ -514,7 +777,15 @@ export default function CreateCustomActionPage() {
                     <AccordionItem value="data-access">
                         <AccordionTrigger>Data access</AccordionTrigger>
                         <AccordionContent>
-                            <DataAccessSection responsePairs={kvPairs} />
+                            <DataAccessSection
+                                responsePairs={kvPairs}
+                                dataAccessType={dataAccessType}
+                                setDataAccessType={setDataAccessType}
+                                allowedFields={allowedFields}
+                                setAllowedFields={setAllowedFields}
+                                onSave={handleDataAccessSave}
+                                isSaving={isCreating}
+                            />
                         </AccordionContent>
                     </AccordionItem>
                 </Card>

@@ -50,6 +50,13 @@
       "when": 1752746531550,
       "tag": "0006_robust_northstar",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1752804945295,
+      "tag": "0007_complete_klaw",
+      "breakpoints": true
     }
   ]
 }

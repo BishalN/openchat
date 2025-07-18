@@ -36,12 +36,13 @@ export default function AgentLayout({
               href={`/dashboard/agent/${agentId}/settings`}
               label="Settings"
             />
-            {/* TODO: Add to roadmap */}
-            {/* <NavItem
+            <NavItem
               href={`/dashboard/agent/${agentId}/actions`}
               label="Actions"
-              badge={{ text: "New", variant: "primary" }}
+              active={path.includes("/actions")}
             />
+            {/* TODO: Add to roadmap */}
+            {/* 
             <NavItem
               href={`/dashboard/agent/${agentId}/contacts`}
               label="Contacts"

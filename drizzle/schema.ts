@@ -48,6 +48,7 @@ export const agentsTable = pgTable("agents", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   description: text("description"),
+  // TODO: always keep this secret key secret, don't expose it to the user
   secretKey: text("secret_key"),
   userId: uuid("user_id")
     .notNull()
@@ -83,6 +84,30 @@ export type QASourceDetails = {
   pairs: Array<{ question: string; answer: string }>;
 };
 
+// Custom Action Types
+export type DataInput = {
+  name: string;
+  type: "Text" | "Number" | "Boolean" | "Date";
+  description: string;
+  array: boolean;
+};
+
+export type KeyValuePair = {
+  key: string;
+  value: string;
+};
+
+export type CustomActionConfig = {
+  dataInputs: DataInput[];
+  apiMethod: "GET" | "POST" | "PUT" | "DELETE";
+  apiUrl: string;
+  parameters: KeyValuePair[];
+  headers: KeyValuePair[];
+  body: KeyValuePair[];
+  dataAccessType: "full" | "limited";
+  allowedFields?: string[]; // Fields that are accessible when dataAccessType is "limited"
+  exampleResponse?: string;
+};
 
 export type SourceDetails =
   | FileSourceDetails
@@ -105,6 +130,25 @@ export const sourcesTable = pgTable("sources", {
 }, (table) => [
   index("sourcesAgentIdIdx").on(table.agentId),
   index("sourcesTypeIdx").on(table.type),
+]);
+
+export const customActionsTable = pgTable("custom_actions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => agentsTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  whenToUse: text("when_to_use").notNull(),
+  config: jsonb("config").$type<CustomActionConfig>().notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .$onUpdate(() => new Date()),
+}, (table) => [
+  index("customActionsAgentIdIdx").on(table.agentId),
+  index("customActionsActiveIdx").on(table.isActive),
 ]);
 
 export const embeddingsTable = pgTable(
@@ -187,6 +231,9 @@ export declare namespace DB {
   export type Source = InferSelectModel<typeof sourcesTable>;
   export type NewSource = InferInsertModel<typeof sourcesTable>;
 
+  export type CustomAction = InferSelectModel<typeof customActionsTable>;
+  export type NewCustomAction = InferInsertModel<typeof customActionsTable>;
+
   export type Conversation = InferSelectModel<typeof conversationsTable>;
   export type NewConversation = InferInsertModel<typeof conversationsTable>;
 
@@ -203,6 +250,9 @@ export type SelectAgent = typeof agentsTable.$inferSelect;
 
 export type InsertSource = typeof sourcesTable.$inferInsert;
 export type SelectSource = typeof sourcesTable.$inferSelect;
+
+export type InsertCustomAction = typeof customActionsTable.$inferInsert;
+export type SelectCustomAction = typeof customActionsTable.$inferSelect;
 
 export type InsertEmbedding = typeof embeddingsTable.$inferInsert;
 export type SelectEmbedding = typeof embeddingsTable.$inferSelect;
