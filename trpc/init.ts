@@ -30,6 +30,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 export const createTRPCRouter = t.router;
 export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
+export const publicProcedure = t.procedure;
 
 // Auth middleware - use this for protected routes
 export const authMiddleware = t.middleware(async ({ ctx, next }) => {

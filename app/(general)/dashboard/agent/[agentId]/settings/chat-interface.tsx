@@ -1,3 +1,5 @@
+"use client";
+
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
@@ -7,10 +9,19 @@ import { Separator } from "@/components/ui/separator";
 import EmbeddableChatWidget from "@/app/(embedbot)/chatbot-iframe/[agentId]/embed";
 import { chatInterfaceSchema, type ChatInterfaceFormValues } from "@/lib/validations/chat-interface";
 import { uploadFileToSupabase } from "@/utils/upload";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { trpc } from "@/trpc/client";
+import { toast } from "@/hooks/use-toast";
 
 
 export function ChatInterfaceSettings() {
+    const { agentId } = useParams();
+    const { data: config } = trpc.chatInterface.getByAgentId.useQuery({ agentId: agentId as string, }, { enabled: !!agentId });
+    const { mutateAsync: createConfig } = trpc.chatInterface.create.useMutation();
+    const { mutateAsync: updateConfig } = trpc.chatInterface.update.useMutation();
+    const [isLoading, setIsLoading] = useState(false);
+
     const form = useForm<ChatInterfaceFormValues>({
         resolver: zodResolver(chatInterfaceSchema),
         defaultValues: {
@@ -27,6 +38,12 @@ export function ChatInterfaceSettings() {
             dismissibleNotice: "",
         },
     });
+
+    useEffect(() => {
+        if (config) {
+            form.reset(config.config);
+        }
+    }, [config, form]);
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
@@ -67,11 +84,30 @@ export function ChatInterfaceSettings() {
     // Watch all form values for live preview
     const settings = form.watch();
 
+    const handleInterfaceConfigUpsert = async () => {
+        setIsLoading(true);
+        // if there are no config, create it
+        if (!config?.id) {
+            await createConfig({ agentId: agentId as string, config: settings });
+            toast({
+                title: "Config created",
+                description: "Config created successfully",
+            });
+        } else {
+            await updateConfig({ agentId: agentId as string, config: settings });
+            toast({
+                title: "Config updated",
+                description: "Config updated successfully",
+            });
+        }
+        setIsLoading(false);
+    }
+
     return (
         <div className="flex gap-8 items-start">
             {/* Settings Form */}
             <div className="w-full flex-1">
-                <form className="border rounded-lg p-6 space-y-6 max-w-2xl">
+                <form className="border rounded-lg p-6 space-y-6 max-w-2xl" >
                     <h2 className="text-xl font-semibold mb-6">Chat Interface</h2>
 
 
@@ -213,7 +249,7 @@ export function ChatInterfaceSettings() {
                     </div>
 
 
-                    <Button type="submit">Save</Button>
+                    <Button type="button" onClick={handleInterfaceConfigUpsert} disabled={isLoading}>{isLoading ? "Saving..." : "Save"}</Button>
                 </form>
             </div>
 

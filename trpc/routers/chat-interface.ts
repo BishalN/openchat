@@ -1,20 +1,34 @@
 import { z } from "zod";
-import { protectedProcedure, createTRPCRouter } from "../init";
+import { protectedProcedure, createTRPCRouter, publicProcedure } from "../init";
 import {
     agentChatInterfaceConfigsTable,
+    agentsTable,
 } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { chatInterfaceSchema } from "@/lib/validations/chat-interface";
 
 export const chatInterfaceRouter = createTRPCRouter({
-    getByAgentId: protectedProcedure
+    getByAgentId: publicProcedure
         .input(z.object({ agentId: z.string().uuid() }))
         .query(async ({ ctx, input }) => {
+            // check if agent is public
+            const [agent] = await ctx.db
+                .select()
+                .from(agentsTable)
+                .where(eq(agentsTable.id, input.agentId))
+                .limit(1);
+            if (!agent) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "Agent not found" });
+            }
+            if (!agent.isPublic) {
+                throw new TRPCError({ code: "UNAUTHORIZED", message: "Agent is not public" });
+            }
             const [config] = await ctx.db
                 .select()
                 .from(agentChatInterfaceConfigsTable)
-                .where(eq(agentChatInterfaceConfigsTable.agentId, input.agentId));
+                .where(eq(agentChatInterfaceConfigsTable.agentId, input.agentId))
+                .limit(1);
             if (!config) {
                 throw new TRPCError({ code: "NOT_FOUND", message: "Config not found" });
             }

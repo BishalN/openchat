@@ -5,47 +5,20 @@ import { useEffect, useState } from "react";
 import EmbeddableChatWidget from "./embed";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/trpc/client";
+import { ChatInterfaceFormValues } from "@/lib/validations/chat-interface";
 
 export default function ChatbotIframe() {
   const { agentId } = useParams<{ agentId: string }>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isPublic, setIsPublic] = useState(false);
-  const [agentData, setAgentData] = useState<{
-    name?: string;
-    logo?: string;
-    initialMessage?: string;
-    suggestedQuestions?: string[];
-    privacyPolicyUrl?: string;
-  } | null>(null);
+  const [settings, setSettings] = useState<ChatInterfaceFormValues | null>(null);
 
-  // Fetch agent data using tRPC
-  const {
-    data,
-    isLoading: isFetching,
-    error,
-  } = trpc.agent.getPublicAgentById.useQuery(
-    { id: agentId },
-    {
-      // Only run query if we have an agentId
-      enabled: !!agentId,
-      // Don't refetch on window focus
-      refetchOnWindowFocus: false,
-    }
-  );
+  const { data: config, isLoading, error } = trpc.chatInterface.getByAgentId.useQuery({ agentId }, { enabled: !!agentId });
 
   useEffect(() => {
-    if (!isFetching) {
-      setIsLoading(false);
-
-      if (data && data.isPublic) {
-        setIsPublic(true);
-        setAgentData({
-          name: data.name,
-          logo: data.name?.charAt(0) || "A",
-        });
-      }
+    if (config) {
+      setSettings(config?.config);
     }
-  }, [data, isFetching, error]);
+  }, [config]);
+
 
   // TODO: remove this u don't want to see this from an embed
   if (isLoading) {
@@ -56,7 +29,7 @@ export default function ChatbotIframe() {
     );
   }
 
-  if (!isPublic) {
+  if (error || !settings) {
     return (
       <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
         <h1 className="mb-2 text-xl font-bold">Agent Not Available</h1>
@@ -69,11 +42,7 @@ export default function ChatbotIframe() {
 
   return (
     <EmbeddableChatWidget
-      agentName={agentData?.name}
-      agentLogo={agentData?.logo}
-      initialMessage={agentData?.initialMessage}
-      suggestedQuestions={agentData?.suggestedQuestions}
-      privacyPolicyUrl={agentData?.privacyPolicyUrl}
+      settings={settings ?? {}}
     />
   );
 }

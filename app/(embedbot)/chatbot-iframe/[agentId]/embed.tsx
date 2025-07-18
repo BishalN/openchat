@@ -9,19 +9,18 @@ import { useChat } from "@ai-sdk/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChatMessage } from "./chat-message";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import type { ChatInterfaceFormValues } from "@/app/(general)/dashboard/agent/[agentId]/settings/chat-interface";
+import type { ChatInterfaceFormValues } from "@/lib/validations/chat-interface";
 
 
 interface EmbeddableChatWidgetProps {
   settings: ChatInterfaceFormValues;
   isCustomizingView?: boolean;
-  privacyPolicyUrl?: string;
 }
 
+// TODO: fix the profile image and icon chat seems to be pixalated
 export default function EmbeddableChatWidget({
   settings,
   isCustomizingView = false,
-  privacyPolicyUrl = "#",
 }: EmbeddableChatWidgetProps) {
   const { agentId } = useParams();
   const [isOpen, setIsOpen] = useState(isCustomizingView ? true : false);
