@@ -9,23 +9,22 @@ import { useChat } from "@ai-sdk/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChatMessage } from "./chat-message";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import type { ChatInterfaceFormValues } from "@/app/(general)/dashboard/agent/[agentId]/settings/chat-interface";
 
 
 interface EmbeddableChatWidgetProps {
-  agentName?: string;
-  agentLogo?: string;
-  initialMessage?: string;
+  settings: ChatInterfaceFormValues;
+  isCustomizingView?: boolean;
   privacyPolicyUrl?: string;
 }
 
 export default function EmbeddableChatWidget({
-  agentName = "OpenChat AI Agent",
-  agentLogo = "oC",
-  initialMessage = "👋 Hi! I am OpenChat AI, ask me anything about OpenChat!",
+  settings,
+  isCustomizingView = false,
   privacyPolicyUrl = "#",
 }: EmbeddableChatWidgetProps) {
   const { agentId } = useParams();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isCustomizingView ? true : false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -40,11 +39,24 @@ export default function EmbeddableChatWidget({
     try {
       identityData = JSON.parse(decodeURIComponent(dataParam));
     } catch (e) {
-      // Optionally log or ignore
       identityData = undefined;
     }
   }
-  console.log(JSON.stringify(identityData, null, 2));
+
+  // Use settings for initial message(s)
+  const initialMessages = settings.initialMessages
+    ? settings.initialMessages.split("\n").filter(Boolean).map((msg, i) => ({
+      id: `welcome-${i}`,
+      role: "assistant" as const,
+      content: msg,
+    }))
+    : [
+      {
+        id: "welcome",
+        role: "assistant" as const,
+        content: "👋 Hi! I am your assistant. How can I help you?",
+      },
+    ];
 
   // Initialize chat with AI SDK
   const {
@@ -62,14 +74,9 @@ export default function EmbeddableChatWidget({
       conversationId,
       ...(identityData ? { identity: identityData } : {}),
     },
-    initialMessages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        content: initialMessage,
-      },
-    ],
+    initialMessages,
   });
+
   useEffect(() => {
     const lastDataItem = data?.[data.length - 1];
     if (lastDataItem && isNewConversationCreated(lastDataItem)) {
@@ -81,48 +88,77 @@ export default function EmbeddableChatWidget({
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isOpen]);
+    if (!isCustomizingView) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isOpen, isCustomizingView]);
 
   // Handle click outside to close the widget
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        chatContainerRef.current &&
-        !chatContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
+    if (!isCustomizingView) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          chatContainerRef.current &&
+          !chatContainerRef.current.contains(event.target as Node)
+        ) {
+          setIsOpen(false);
+        }
+      };
+
+      if (isOpen) {
+        document.addEventListener("mousedown", handleClickOutside);
       }
-    };
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
     }
+  }, [isOpen, isCustomizingView]);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+  // Theme and color settings
+  const headerBg = settings.syncUserMessageColorWithAgentHeader ? settings.userMessageColor : "#34312d"; // Orange as in screenshot
+  const chatBubbleButtonColor = settings.chatBubbleButtonColor || "#000000";
+  const displayName = settings.displayName || "Generic Resume.pdf";
+  const profilePicture = settings.profilePicture;
+  const chatBubbleTriggerIcon = settings.chatBubbleTriggerIcon;
+  const messagePlaceholder = settings.messagePlaceholder || "Message...";
+  const footer = settings.footer || "";
+  const suggestedMessages = settings.suggestedMessages || [];
+
+  // Dismissible notice
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
+  const dismissibleNotice = settings.dismissibleNotice;
+
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end">
+    <div className={cn(
+      !isCustomizingView ? "fixed bottom-5 right-5 z-50 flex flex-col items-end" : "",
+    )}>
       {/* Chat Widget */}
       <div
         ref={chatContainerRef}
         className={cn(
-          "bg-white rounded-lg shadow-lg flex flex-col w-[400px] transition-all duration-300 ease-in-out mb-3",
+          "rounded-2xl shadow-lg flex flex-col w-[400px] transition-all duration-300 ease-in-out mb-3 border border-gray-200",
           "overflow-hidden",
           isOpen ? "h-[600px] opacity-100" : "h-0 opacity-0 pointer-events-none"
         )}
         style={{ boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)" }}
       >
         {/* Header */}
-        <div className="bg-black text-white p-3 flex items-center justify-between rounded-t-lg">
+        <div className="flex items-center justify-between rounded-t-2xl px-4 py-3" style={{ background: headerBg }}>
           <div className="flex items-center gap-2">
-            <div className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center font-bold">
-              {agentLogo}
+            <div className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center font-bold overflow-hidden">
+              {profilePicture ? (
+                typeof profilePicture === "string" ? (
+                  <img src={profilePicture} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <img src={URL.createObjectURL(profilePicture)} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                )
+              ) : (
+                <span>{displayName?.[0] || "A"}</span>
+              )}
             </div>
-            <span className="font-medium">{agentName}</span>
+            <span className="font-medium text-white">{displayName}</span>
           </div>
           <div className="flex items-center gap-1">
             <Popover>
@@ -135,19 +171,6 @@ export default function EmbeddableChatWidget({
                   <MoreVertical className="h-5 w-5" />
                 </Button>
               </PopoverTrigger>
-              {/* <PopoverContent align="end" className="w-56 p-0 bg-white text-black border border-gray-200 shadow-lg rounded-lg">
-                <div className="py-2">
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus:outline-none">
-                    <span>Start a new chat</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-400 cursor-not-allowed" disabled>
-                    <span>End chat</span>
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus:outline-none">
-                    <span>View recent chats</span>
-                  </button>
-                </div>
-              </PopoverContent> */}
             </Popover>
             <Button
               variant="ghost"
@@ -160,6 +183,14 @@ export default function EmbeddableChatWidget({
           </div>
         </div>
 
+        {/* Dismissible Notice */}
+        {dismissibleNotice && !noticeDismissed && (
+          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-xs flex items-center justify-between">
+            <span>{dismissibleNotice}</span>
+            <button onClick={() => setNoticeDismissed(true)} className="ml-2 text-xs">Dismiss</button>
+          </div>
+        )}
+
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           {messages.map((message, index) => {
@@ -168,7 +199,7 @@ export default function EmbeddableChatWidget({
                 key={index}
                 parts={message.parts ?? []}
                 role={message.role}
-                userName={message.role === "user" ? "You" : "AI"}
+                userName={message.role === "user" ? "You" : displayName}
               />
             );
           })}
@@ -194,14 +225,37 @@ export default function EmbeddableChatWidget({
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Suggested Messages - now just above the input area, horizontal scroll */}
+        {suggestedMessages.length > 0 && (messages.length === initialMessages.length) && (
+          <div
+            className="flex gap-2 mt-2 mb-2 justify-end overflow-x-auto pr-3"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {suggestedMessages.map((msg, idx) => (
+              <button
+                key={idx}
+                className="px-3 py-1 rounded-full text-xs whitespace-nowrap transition border border-gray-200 hover:opacity-90"
+                style={{ background: settings.userMessageColor || '#000', color: '#fff' }}
+                onClick={() => handleInputChange({ target: { value: msg.value } } as React.ChangeEvent<HTMLTextAreaElement>)}
+                type="button"
+                tabIndex={0}
+                aria-label={`Use suggested message: ${msg.value}`}
+              >
+                {msg.value}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Input Area */}
         <div className="p-3 border-t border-gray-200">
           <form onSubmit={handleChatSubmit} className="flex gap-2 items-center">
             <Textarea
-              placeholder="Message..."
+              placeholder={messagePlaceholder}
               value={input}
               onChange={handleInputChange}
               className="min-h-[40px] max-h-[120px] resize-none text-sm py-2"
@@ -215,20 +269,19 @@ export default function EmbeddableChatWidget({
             <Button
               type="submit"
               className="h-10 w-10 rounded-full p-0 flex items-center justify-center"
+              style={{ background: settings.syncUserMessageColorWithAgentHeader ? settings.userMessageColor : "#000", color: "#fff" }}
               disabled={!input.trim() || chatStatus === "submitted"}
             >
               <Send className="h-4 w-4" />
             </Button>
           </form>
-          <div className="text-xs text-gray-500 mt-2 text-center">
-            By chatting, you agree to our{" "}
-            <a
-              href={privacyPolicyUrl}
-              className="underline hover:text-gray-700"
-            >
-              privacy policy
-            </a>
-            .
+          {footer && (
+            <div className="text-xs text-gray-500 mt-2 text-center">
+              {footer}
+            </div>
+          )}
+          <div className="text-xs text-gray-400 mt-2 text-center">
+            Powered by Chatbase
           </div>
         </div>
       </div>
@@ -238,13 +291,23 @@ export default function EmbeddableChatWidget({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "rounded-full w-14 h-14 p-0 flex items-center justify-center shadow-lg",
-          "bg-black hover:bg-gray-800 text-white"
+          "bg-black hover:bg-gray-800 text-white",
+          "self-end mr-2"
         )}
+        style={{ background: chatBubbleButtonColor, color: "#fff" }}
       >
         {isOpen ? (
           <X className="h-6 w-6" />
         ) : (
-          <MessageCircle className="h-6 w-6" />
+          chatBubbleTriggerIcon ? (
+            typeof chatBubbleTriggerIcon === "string" ? (
+              <img src={chatBubbleTriggerIcon} alt="Chat Icon" className="h-6 w-6 rounded-full object-cover" />
+            ) : (
+              <img src={URL.createObjectURL(chatBubbleTriggerIcon)} alt="Chat Icon" className="h-6 w-6 rounded-full object-cover" />
+            )
+          ) : (
+            <MessageCircle className="h-6 w-6" />
+          )
         )}
       </Button>
     </div>

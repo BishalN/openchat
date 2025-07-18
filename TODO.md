@@ -19,9 +19,13 @@ and probably in retrain agents also use the use-source hook for state cuz that i
 
 
 TODO: fix the custom action latency problem
+TODO: Test custom action with user identity, by doing sth like updating the user subscriptions, for this create a simple environment and verify that this works
+
 
 TODO: fix the name / logo / color / design of the chat bubble i.e make settings page better
+TODO: fix the playground page ui and also there only allow selection of google models and use the system prompt and everything given by user in chat-route; maybe modify sth in system prompt everything else use the customers choice
 TODO: add some tests 
+
 TODO: create a algorithm for documentation
 TODO: read the documentation and make it ready
 

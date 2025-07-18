@@ -71,6 +71,20 @@
       "when": 1752815683955,
       "tag": "0009_unique_changeling",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1752826110645,
+      "tag": "0010_majestic_anthem",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1752826294607,
+      "tag": "0011_tranquil_groot",
+      "breakpoints": true
     }
   ]
 }

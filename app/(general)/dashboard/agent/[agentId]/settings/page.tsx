@@ -2,12 +2,10 @@
 
 import { useParams } from "next/navigation";
 import { useMemo } from "react";
-import { Copy } from "lucide-react";
 
 import { useAgentSettings } from "@/hooks/use-settings-mutation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
@@ -24,13 +22,7 @@ import type { ReactNode } from "react";
 // Constants
 const TABS = {
   GENERAL: "general",
-  AI: "ai",
   CHAT_INTERFACE: "chat-interface",
-  SECURITY: "security",
-  LEADS: "leads",
-  NOTIFICATIONS: "notifications",
-  WEBHOOKS: "webhooks",
-  CUSTOM_DOMAINS: "custom-domains",
 } as const;
 
 export type TabType = (typeof TABS)[keyof typeof TABS];
@@ -38,14 +30,7 @@ export type TabType = (typeof TABS)[keyof typeof TABS];
 // Icons
 import {
   GeneralIcon,
-  AIIcon,
   ChatInterfaceIcon,
-  SecurityIcon,
-  LeadsIcon,
-  NotificationsIcon,
-  WebhooksIcon,
-  CustomDomainsIcon,
-  InfoCircleIcon,
 } from "./icons";
 
 // Components
@@ -59,11 +44,10 @@ interface TabButtonProps {
 const TabButton = ({ icon, label, active, onClick }: TabButtonProps) => {
   return (
     <button
-      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium w-full text-left ${
-        active
-          ? "bg-primary/10 text-primary"
-          : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-      }`}
+      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium w-full text-left ${active
+        ? "bg-primary/10 text-primary"
+        : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+        }`}
       onClick={onClick}
       aria-selected={active}
       role="tab"
@@ -90,49 +74,12 @@ const SettingsTabs = ({ activeTab, setActiveTab }: TabsProps) => {
         active={activeTab === TABS.GENERAL}
         onClick={() => setActiveTab(TABS.GENERAL)}
       />
-      {/* TODO: Add this to roadmap */}
-      {/* <TabButton
-        icon={<AIIcon />}
-        label="AI"
-        active={activeTab === TABS.AI}
-        onClick={() => setActiveTab(TABS.AI)}
-      />
       <TabButton
         icon={<ChatInterfaceIcon />}
         label="Chat Interface"
         active={activeTab === TABS.CHAT_INTERFACE}
         onClick={() => setActiveTab(TABS.CHAT_INTERFACE)}
       />
-      <TabButton
-        icon={<SecurityIcon />}
-        label="Security"
-        active={activeTab === TABS.SECURITY}
-        onClick={() => setActiveTab(TABS.SECURITY)}
-      />
-      <TabButton
-        icon={<LeadsIcon />}
-        label="Leads"
-        active={activeTab === TABS.LEADS}
-        onClick={() => setActiveTab(TABS.LEADS)}
-      />
-      <TabButton
-        icon={<NotificationsIcon />}
-        label="Notifications"
-        active={activeTab === TABS.NOTIFICATIONS}
-        onClick={() => setActiveTab(TABS.NOTIFICATIONS)}
-      />
-      <TabButton
-        icon={<WebhooksIcon />}
-        label="Webhooks"
-        active={activeTab === TABS.WEBHOOKS}
-        onClick={() => setActiveTab(TABS.WEBHOOKS)}
-      />
-      <TabButton
-        icon={<CustomDomainsIcon />}
-        label="Custom Domains"
-        active={activeTab === TABS.CUSTOM_DOMAINS}
-        onClick={() => setActiveTab(TABS.CUSTOM_DOMAINS)}
-      /> */}
     </div>
   );
 };
@@ -143,8 +90,6 @@ interface GeneralSettingsProps {
   isLoading: boolean;
   isUpdating: boolean;
   setName: (name: string) => void;
-  setCreditLimitEnabled: (enabled: boolean) => void;
-  setCreditLimit: (limit: number) => void;
   saveSettings: () => Promise<void>;
 }
 
@@ -154,8 +99,6 @@ const GeneralSettings = ({
   isLoading,
   isUpdating,
   setName,
-  setCreditLimitEnabled,
-  setCreditLimit,
   saveSettings,
 }: GeneralSettingsProps) => {
   return (
@@ -181,11 +124,6 @@ const GeneralSettings = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Size</label>
-          <p className="text-sm">2.25 KB</p>
-        </div>
-
-        <div className="space-y-2">
           <label htmlFor="agentName" className="text-sm font-medium">
             Name
           </label>
@@ -194,38 +132,6 @@ const GeneralSettings = ({
             value={settings.name}
             onChange={(e) => setName(e.target.value)}
           />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <label htmlFor="creditLimit" className="text-sm font-medium">
-                Credit limit
-              </label>
-              <InfoCircleIcon className="text-muted-foreground" />
-            </div>
-            <Switch
-              id="creditLimit"
-              checked={settings.isCreditLimitEnabled}
-              onCheckedChange={setCreditLimitEnabled}
-            />
-          </div>
-          {settings.isCreditLimitEnabled && (
-            <div className="mt-2">
-              <Input
-                id="creditLimitValue"
-                type="number"
-                min={0}
-                value={settings.creditLimit}
-                onChange={(e) => setCreditLimit(Number(e.target.value))}
-                className="max-w-xs"
-                placeholder="Enter credit limit"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Maximum number of messages users can send to this agent
-              </p>
-            </div>
-          )}
         </div>
 
         <div className="flex justify-end">
@@ -433,6 +339,8 @@ const DeleteConversationsDialog = ({
   );
 };
 
+import { ChatInterfaceSettings } from "./chat-interface";
+
 // Main component
 export default function SettingsPage() {
   const { agentId } = useParams();
@@ -444,8 +352,6 @@ export default function SettingsPage() {
     isLoading,
     isUpdating,
     setName,
-    setCreditLimitEnabled,
-    setCreditLimit,
     saveSettings,
     handleDeleteAgent,
     isDeleteDialogOpen,
@@ -463,7 +369,7 @@ export default function SettingsPage() {
 
   // Get current tab content based on activeTab
   const currentTabContent = useMemo(() => {
-    switch (activeTab) {
+    switch (activeTab as string) {
       case TABS.GENERAL:
         return (
           <GeneralSettings
@@ -472,18 +378,17 @@ export default function SettingsPage() {
             isLoading={isLoading}
             isUpdating={isUpdating}
             setName={setName}
-            setCreditLimitEnabled={setCreditLimitEnabled}
-            setCreditLimit={setCreditLimit}
             saveSettings={saveSettings}
           />
         );
+      case TABS.CHAT_INTERFACE:
+        return <ChatInterfaceSettings />;
       // Other tab content implementations would go here
       default:
         return (
           <div className="border rounded-lg p-6">
             <h2 className="text-xl font-semibold">
-              {activeTab.charAt(0).toUpperCase() +
-                activeTab.slice(1).replace(/-/g, " ")}
+              {String(activeTab).charAt(0).toUpperCase() + String(activeTab).slice(1).replace(/-/g, " ")}
             </h2>
             <p className="text-muted-foreground mt-2">
               This tab is under development.
@@ -498,8 +403,6 @@ export default function SettingsPage() {
     isLoading,
     isUpdating,
     setName,
-    setCreditLimitEnabled,
-    setCreditLimit,
     saveSettings,
   ]);
 

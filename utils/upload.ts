@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 
-export async function uploadFileToSupabase(file: File) {
+export async function uploadFileToSupabase(file: File, bucket: string = "files") {
   const supabase = createClient();
 
   try {
@@ -21,7 +21,7 @@ export async function uploadFileToSupabase(file: File) {
 
     // Upload file with presigned URL
     const { data: presignedData, error: presignedError } =
-      await supabase.storage.from("files").createSignedUploadUrl(filePath);
+      await supabase.storage.from(bucket).createSignedUploadUrl(filePath);
 
     if (presignedError) {
       throw new Error(`Failed to get presigned URL: ${presignedError.message}`);
@@ -43,7 +43,7 @@ export async function uploadFileToSupabase(file: File) {
 
     // Get public URL
     const { data: publicUrlData } = supabase.storage
-      .from("files")
+      .from(bucket)
       .getPublicUrl(filePath);
 
     return {

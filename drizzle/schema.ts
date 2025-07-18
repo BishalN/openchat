@@ -12,6 +12,7 @@ import {
   uuid,
   varchar,
   json,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export interface AgentConfig {
@@ -21,6 +22,21 @@ export interface AgentConfig {
   systemPrompt?: string;
   instructions?: string;
 }
+
+// Chat Interface Config type (matches app/(general)/dashboard/agent/[agentId]/settings/chat-interface.tsx)
+export type ChatInterfaceConfig = {
+  displayName?: string;
+  profilePicture?: string | null; // Store as URL or null
+  chatBubbleTriggerIcon?: string | null; // Store as URL or null
+  userMessageColor?: string;
+  syncUserMessageColorWithAgentHeader: boolean;
+  chatBubbleButtonColor?: string;
+  initialMessages?: string;
+  suggestedMessages: { value: string }[];
+  messagePlaceholder?: string;
+  footer?: string;
+  dismissibleNotice?: string;
+};
 
 // User profiles table that extends Supabase auth.users
 export const profilesTable = pgTable("profiles", {
@@ -220,6 +236,20 @@ export const messagesRelations = relations(messagesTable, ({ one }) => ({
   conversation: one(conversationsTable, { fields: [messagesTable.conversationId], references: [conversationsTable.id] }),
 }));
 
+export const agentChatInterfaceConfigsTable = pgTable("agent_chat_interface_configs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => agentsTable.id, { onDelete: "cascade" }),
+  config: jsonb("config").$type<ChatInterfaceConfig>().notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .$onUpdate(() => new Date()),
+}, (table) => [
+  unique("agentChatInterfaceConfigsAgentIdUnique").on(table.agentId),
+]);
+
 export declare namespace DB {
   export type User = InferSelectModel<typeof profilesTable>;
   export type NewUser = InferInsertModel<typeof profilesTable>;
@@ -238,6 +268,9 @@ export declare namespace DB {
 
   export type Message = InferSelectModel<typeof messagesTable>;
   export type NewMessage = InferInsertModel<typeof messagesTable>;
+
+  export type AgentChatInterfaceConfig = InferSelectModel<typeof agentChatInterfaceConfigsTable>;
+  export type NewAgentChatInterfaceConfig = InferInsertModel<typeof agentChatInterfaceConfigsTable>;
 }
 
 // TODO: remove these once we have a proper type for the database
@@ -261,3 +294,6 @@ export type SelectConversation = typeof conversationsTable.$inferSelect;
 
 export type InsertMessage = typeof messagesTable.$inferInsert;
 export type SelectMessage = typeof messagesTable.$inferSelect;
+
+export type InsertAgentChatInterfaceConfig = typeof agentChatInterfaceConfigsTable.$inferInsert;
+export type SelectAgentChatInterfaceConfig = typeof agentChatInterfaceConfigsTable.$inferSelect;
