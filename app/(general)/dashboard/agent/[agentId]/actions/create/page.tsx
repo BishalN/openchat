@@ -12,6 +12,9 @@ import { Trash } from "lucide-react";
 import { useCustomActions } from "@/hooks/use-custom-actions";
 import { toast } from "sonner";
 
+// TODO: by default keep actions as inactive and user should make it active
+// also bunch of ui / testing is not working, fix that
+
 // General Section Component
 function GeneralSection({
     actionName,
@@ -61,6 +64,7 @@ function GeneralSection({
 }
 
 // TODO: infer the parameters from the API URL
+// TODO: while sending the api url to back remove the params from the url, just send the url
 // API Section Component
 function ApiSection({
     dataInputs,

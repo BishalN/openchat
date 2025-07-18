@@ -1,0 +1,1 @@
+ALTER TABLE "custom_actions" DROP COLUMN "description";

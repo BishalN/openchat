@@ -114,7 +114,6 @@ export async function PUT(
             .update(customActionsTable)
             .set({
                 name,
-                description,
                 whenToUse,
                 config,
                 updatedAt: new Date(),

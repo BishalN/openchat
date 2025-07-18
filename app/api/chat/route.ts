@@ -1,6 +1,6 @@
 import { findRelevantContent } from "@/lib/ai/embedding";
 import { google } from "@ai-sdk/google";
-import { appendResponseMessages, createDataStreamResponse, Message, streamText, ToolSet } from "ai";
+import { appendResponseMessages, createDataStreamResponse, Message, streamText, } from "ai";
 import { z } from "zod";
 import {
   conversationsTable,
@@ -12,6 +12,7 @@ import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { upsertConversation } from "@/drizzle/queries";
 import { eq } from "drizzle-orm";
 import { Langfuse } from "langfuse";
+import { createCustomActionTools } from "@/lib/ai/custom-actions";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
@@ -91,7 +92,8 @@ export async function POST(req: Request) {
     }
     trace.update({ sessionId: currentConversationId });
 
-
+    // Create custom action tools
+    const customTools = await createCustomActionTools(agentId, trace);
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
@@ -134,6 +136,7 @@ export async function POST(req: Request) {
                 return context.map((c) => c.content).join(", ");
               },
             },
+            ...customTools, // Add custom action tools
           },
           onFinish: async ({ response }) => {
             // Merge the existing messages with the response messages

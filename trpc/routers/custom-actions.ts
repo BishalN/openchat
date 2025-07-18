@@ -147,7 +147,6 @@ export const customActionsRouter = createTRPCRouter({
             z.object({
                 id: z.string().uuid(),
                 name: z.string().min(1).optional(),
-                description: z.string().optional(),
                 whenToUse: z.string().min(1).optional(),
                 config: customActionConfigSchema.optional(),
             })
@@ -187,7 +186,6 @@ export const customActionsRouter = createTRPCRouter({
                 .update(customActionsTable)
                 .set({
                     name: input.name,
-                    description: input.description,
                     whenToUse: input.whenToUse,
                     config: input.config,
                     updatedAt: new Date(),

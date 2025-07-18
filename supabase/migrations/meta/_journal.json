@@ -57,6 +57,13 @@
       "when": 1752804945295,
       "tag": "0007_complete_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1752809445147,
+      "tag": "0008_fixed_santa_claus",
+      "breakpoints": true
     }
   ]
 }

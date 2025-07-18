@@ -138,7 +138,6 @@ export const customActionsTable = pgTable("custom_actions", {
     .notNull()
     .references(() => agentsTable.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  description: text("description"),
   whenToUse: text("when_to_use").notNull(),
   config: jsonb("config").$type<CustomActionConfig>().notNull(),
   isActive: boolean("is_active").default(true),

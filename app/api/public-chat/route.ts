@@ -10,6 +10,7 @@ import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { eq } from "drizzle-orm";
 import { Langfuse } from "langfuse";
 import crypto from "crypto";
+import { createCustomActionTools } from "@/lib/ai/custom-actions";
 
 // Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
@@ -26,7 +27,6 @@ function verifyIdentity(identity: Identity, secret_key: string) {
 
   return computedHash === identity.user_hash;
 }
-
 
 export async function POST(req: Request) {
   try {
@@ -83,6 +83,9 @@ export async function POST(req: Request) {
       name: "chat",
     });
 
+    // Create custom action tools
+    const customTools = await createCustomActionTools(agentId, trace);
+
     return createDataStreamResponse({
       execute: async (dataStream) => {
         // If this is a new chat, send the chat ID to the frontend
@@ -119,6 +122,7 @@ export async function POST(req: Request) {
                 return context.map((c) => c.content).join(", ");
               },
             },
+            ...customTools, // Add custom action tools
           },
           onFinish: async ({ response }) => {
             // Merge the existing messages with the response messages
@@ -138,9 +142,8 @@ export async function POST(req: Request) {
               title: lastMessage.content.slice(0, 50) + "...",
               messages: updatedMessages,
               agentId,
-              identity
+              identity,
             });
-
             await langfuse.flushAsync();
           },
         });
@@ -153,13 +156,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Error processing chat request:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Internal server error",
-        details: errorHandler(error),
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error(error);
+    return new Response("Internal server error", { status: 500 });
   }
 }
