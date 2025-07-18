@@ -162,7 +162,7 @@ export default function ActionsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="mt-auto flex justify-end">
-                                <Button size="sm" variant="outline">
+                                <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/agent/${agentId}/actions/edit/${action.id}`)}>
                                     Edit
                                 </Button>
                             </CardFooter>

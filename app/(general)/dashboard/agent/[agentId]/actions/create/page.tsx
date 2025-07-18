@@ -11,12 +11,13 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Trash } from "lucide-react";
 import { useCustomActions } from "@/hooks/use-custom-actions";
 import { toast } from "sonner";
+import { extractQueryParameters, buildUrlWithParams, getBaseUrl, flattenJson } from "@/lib/utils";
 
 // TODO: by default keep actions as inactive and user should make it active
 // also bunch of ui / testing is not working, fix that
 
 // General Section Component
-function GeneralSection({
+export function GeneralSection({
     actionName,
     setActionName,
     whenToUse,
@@ -65,7 +66,7 @@ function GeneralSection({
 
 // TODO: while sending the api url to back remove the params from the url, just send the url
 // API Section Component
-function ApiSection({
+export function ApiSection({
     dataInputs,
     addDataInput,
     removeDataInput,
@@ -251,18 +252,8 @@ function ApiSection({
     );
 }
 
-function flattenJson(obj: any, prefix = "", res: Record<string, string> = {}) {
-    for (const key in obj) {
-        if (typeof obj[key] === "object" && obj[key] !== null) {
-            flattenJson(obj[key], prefix ? `${prefix}.${key}` : key, res);
-        } else {
-            res[prefix ? `${prefix}.${key}` : key] = String(obj[key]);
-        }
-    }
-    return res;
-}
 
-function TestResponseSection({
+export function TestResponseSection({
     dataInputs,
     config,
     onTestResult,
@@ -506,7 +497,7 @@ function TestResponseSection({
     );
 }
 
-function DataAccessSection({
+export function DataAccessSection({
     responsePairs,
     dataAccessType,
     setDataAccessType,
@@ -694,55 +685,7 @@ function DataAccessSection({
     );
 }
 
-// Function to extract query parameters from URL
-function extractQueryParameters(url: string): Array<{ key: string; value: string }> {
-    try {
-        const urlObj = new URL(url);
-        const params: Array<{ key: string; value: string }> = [];
 
-        urlObj.searchParams.forEach((value, key) => {
-            params.push({ key, value });
-        });
-
-        return params;
-    } catch (error) {
-        // If URL is invalid, return empty array
-        return [];
-    }
-}
-
-// Function to build URL with parameters
-function buildUrlWithParams(baseUrl: string, parameters: Array<{ key: string; value: string }>): string {
-    try {
-        const urlObj = new URL(baseUrl);
-
-        // Clear existing search params
-        urlObj.search = '';
-
-        // Add parameters
-        parameters.forEach(({ key, value }) => {
-            if (key && value) {
-                urlObj.searchParams.append(key, value);
-            }
-        });
-
-        return urlObj.toString();
-    } catch (error) {
-        // If URL is invalid, return original URL
-        return baseUrl;
-    }
-}
-
-// Function to get base URL without parameters
-function getBaseUrl(url: string): string {
-    try {
-        const urlObj = new URL(url);
-        return `${urlObj.origin}${urlObj.pathname}`;
-    } catch (error) {
-        // If URL is invalid, return original URL
-        return url;
-    }
-}
 
 // TODO: use react-hook-form with zod resolver to validate the form
 export default function CreateCustomActionPage() {
@@ -751,7 +694,7 @@ export default function CreateCustomActionPage() {
     const agentId = params.agentId as string;
 
     // Use the custom actions hook
-    const { createAction, isCreating } = useCustomActions(agentId);
+    const { createAction, isCreating, } = useCustomActions(agentId);
 
     const [openSection, setOpenSection] = useState("general");
 
