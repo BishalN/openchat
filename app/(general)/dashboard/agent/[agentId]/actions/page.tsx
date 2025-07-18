@@ -12,10 +12,15 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Markdown } from "@/components/ui/markdown";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { AIIcon } from "../settings/icons";
 import { useParams, useRouter } from "next/navigation";
 import { trpc } from "@/trpc/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, HelpCircle } from "lucide-react";
 
 export default function ActionsPage() {
     const router = useRouter();
@@ -106,12 +111,44 @@ export default function ActionsPage() {
                             <CardHeader>
                                 <div className="flex items-center gap-2 mb-2">
                                     <Badge variant="secondary">{action.config.apiMethod}</Badge>
+                                    <HoverCard>
+                                        <HoverCardTrigger asChild>
+                                            <Badge
+                                                variant={action.isActive ? "default" : "secondary"}
+                                                className="cursor-help flex items-center gap-1"
+                                            >
+                                                {action.isActive ? "Active" : "Inactive"}
+                                                <HelpCircle className="h-3 w-3" />
+                                            </Badge>
+                                        </HoverCardTrigger>
+                                        <HoverCardContent className="w-80">
+                                            <div className="flex justify-between space-x-4">
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-semibold">
+                                                        {action.isActive ? "Active Action" : "Inactive Action"}
+                                                    </h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {action.isActive
+                                                            ? "This action is currently enabled and can be used by your agent during conversations."
+                                                            : "This action is currently disabled and will not be used by your agent during conversations."
+                                                        }
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground mt-2">
+                                                        {action.isActive
+                                                            ? "The agent can call this action when it matches the 'When to use' criteria."
+                                                            : "Enable this action to allow the agent to use it when appropriate."
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </HoverCardContent>
+                                    </HoverCard>
                                     <span className="text-xs text-muted-foreground ml-auto">
                                         {new Date(action.createdAt).toLocaleDateString()}
                                     </span>
                                 </div>
                                 <CardTitle>{action.name}</CardTitle>
-                                <CardDescription>{action.description || "No description provided"}</CardDescription>
+                                <CardDescription>{action.whenToUse || "No description provided"}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="mb-2">

@@ -57,7 +57,6 @@ export const customActionsRouter = createTRPCRouter({
                 .where(
                     and(
                         eq(customActionsTable.agentId, input.agentId),
-                        eq(customActionsTable.isActive, true)
                     )
                 )
                 .orderBy(desc(customActionsTable.createdAt));

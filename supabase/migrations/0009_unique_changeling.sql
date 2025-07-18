@@ -1,0 +1,1 @@
+ALTER TABLE "custom_actions" ALTER COLUMN "is_active" SET DEFAULT false;

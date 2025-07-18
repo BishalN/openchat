@@ -63,7 +63,6 @@ function GeneralSection({
     );
 }
 
-// TODO: infer the parameters from the API URL
 // TODO: while sending the api url to back remove the params from the url, just send the url
 // API Section Component
 function ApiSection({
@@ -71,6 +70,7 @@ function ApiSection({
     addDataInput,
     removeDataInput,
     updateDataInput,
+    setDataInputs,
     apiMethod,
     setApiMethod,
     apiUrl,
@@ -86,10 +86,11 @@ function ApiSection({
     onSave,
     isSaving,
 }: {
-    dataInputs: Array<{ name: string; type: string; description: string; array: boolean }>;
+    dataInputs: Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>;
     addDataInput: () => void;
     removeDataInput: (idx: number) => void;
     updateDataInput: (idx: number, field: string, value: any) => void;
+    setDataInputs: (inputs: Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>) => void;
     apiMethod: "GET" | "POST" | "PUT" | "DELETE";
     setApiMethod: (m: "GET" | "POST" | "PUT" | "DELETE") => void;
     apiUrl: string;
@@ -105,6 +106,30 @@ function ApiSection({
     onSave: () => void;
     isSaving: boolean;
 }) {
+    const handleAddVariable = () => {
+        // Generate a default variable name
+        const variableCount = dataInputs.length + 1;
+        const variableName = `variable_${variableCount}`;
+
+        // Add variable placeholder to API URL
+        const placeholder = `{{${variableName}}}`;
+        setApiUrl(apiUrl + placeholder);
+
+        // Add corresponding data input with default values directly
+        const newDataInput = {
+            name: variableName,
+            type: "Text" as const,
+            description: `Value for ${variableName}`,
+            array: false
+        };
+
+        // Add the new data input directly to the state
+        setDataInputs([...dataInputs, newDataInput]);
+
+        toast("Variable added successfully", {
+            description: `Added ${placeholder} to API URL and created data input`,
+        });
+    };
     return (
         <div className="space-y-6 py-2">
             {/* Data Inputs */}
@@ -175,7 +200,7 @@ function ApiSection({
                         <option>DELETE</option>
                     </select>
                     <Input placeholder="https://api.example.com/endpoint/{{item_id}}" value={apiUrl} onChange={e => setApiUrl(e.target.value)} className="flex-1" />
-                    <Button size="sm" variant="outline">+ Add variable</Button>
+                    <Button size="sm" variant="outline" onClick={handleAddVariable}>+ Add variable</Button>
                 </div>
                 {/* Tabs for Parameters, Headers, Body */}
                 <div className="flex gap-4 mb-2 mt-4">
@@ -214,6 +239,11 @@ function ApiSection({
                     <Button size="sm" variant="outline" className="mt-2" onClick={() => addKeyValue(apiTab)}>
                         + Add key value pair
                     </Button>
+                    {apiTab === "parameters" && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Parameters are synchronized with the API URL. Changes here will update the URL above.
+                        </p>
+                    )}
                 </div>
             </div>
             <Button onClick={onSave} className="mt-4">Save and continue</Button>
@@ -241,26 +271,17 @@ function TestResponseSection({
     config: any;
     onTestResult: (pairs: { key: string; value: string }[]) => void;
 }) {
-    // Mode: "live" or "example"
-    const [mode, setMode] = useState("live");
     // Token values
     const [tokenValues, setTokenValues] = useState<{ [key: string]: string }>({});
-    // JSON response (mock for now)
-    const [jsonResponse, setJsonResponse] = useState(`{
-  "data": {
-    "id": 9,
-    "created_at": "2024-12-02T23:13:19.856188+00:00",
-    "user_id": "user-1",
-    "status": "active",
-    "plan": "premium"
-  }
-}`);
+    // JSON response from actual API call
+    const [jsonResponse, setJsonResponse] = useState("");
     // Key-value pairs from response
     const [kvPairs, setKvPairs] = useState<{ key: string; value: string }[]>([]);
-    // Example JSON textarea (for example mode)
-    const [exampleJson, setExampleJson] = useState(jsonResponse);
+
     // Error state
     const [error, setError] = useState<string | null>(null);
+    // Loading state for API calls
+    const [isLoading, setIsLoading] = useState(false);
 
     // Sync token values with dataInputs
     useEffect(() => {
@@ -276,28 +297,118 @@ function TestResponseSection({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataInputs]);
 
-    // Helper for syntax highlighting JSON (very basic)
-    function highlightJson(json: string) {
-        return json
-            .replace(/("[^"]+":)/g, '<span class="text-blue-700">$1</span>') // keys
-            .replace(/("[^"]*")/g, '<span class="text-green-700">$1</span>') // strings
-            .replace(/(:\s)(\d+)/g, '$1<span class="text-purple-700">$2</span>'); // numbers
-    }
+
 
     // Line numbers for code block
-    const lines = (mode === "example" ? exampleJson : jsonResponse).split("\n");
+    const lines = (jsonResponse || "").split("\n");
 
     // Handle test response
-    const handleTestResponse = () => {
+    const handleTestResponse = async () => {
         setError(null);
-        let jsonStr = mode === "example" ? exampleJson : jsonResponse;
+        setIsLoading(true);
+
+        // Live mode - make actual API call
         try {
-            const parsed = JSON.parse(jsonStr);
-            const flat = flattenJson(parsed);
-            setKvPairs(Object.entries(flat).map(([key, value]) => ({ key, value })));
+            if (!config.apiUrl) {
+                setError("API URL is required");
+                setIsLoading(false);
+                return;
+            }
+
+            // Build the URL with token replacements
+            let url = config.apiUrl;
+            Object.entries(tokenValues).forEach(([key, value]) => {
+                const placeholder = `{{${key}}}`;
+                url = url.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+            });
+
+            // Build request options
+            const requestOptions: RequestInit = {
+                method: config.apiMethod || 'GET',
+                headers: {},
+            };
+
+            // Add headers
+            if (config.headers) {
+                config.headers.forEach((header: { key: string; value: string }) => {
+                    if (header.key && header.value) {
+                        requestOptions.headers = {
+                            ...requestOptions.headers,
+                            [header.key]: header.value
+                        };
+                    }
+                });
+            }
+
+            // Add query parameters
+            if (config.parameters && config.parameters.length > 0) {
+                const urlObj = new URL(url);
+                config.parameters.forEach((param: { key: string; value: string }) => {
+                    if (param.key && param.value) {
+                        // Replace tokens in parameter values
+                        let paramValue = param.value;
+                        Object.entries(tokenValues).forEach(([key, value]) => {
+                            const placeholder = `{{${key}}}`;
+                            paramValue = paramValue.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+                        });
+                        urlObj.searchParams.append(param.key, paramValue);
+                    }
+                });
+                url = urlObj.toString();
+            }
+
+            // Add body for POST/PUT requests
+            if ((config.apiMethod === 'POST' || config.apiMethod === 'PUT') && config.body && config.body.length > 0) {
+                const bodyObj: any = {};
+                config.body.forEach((item: { key: string; value: string }) => {
+                    if (item.key && item.value) {
+                        // Replace tokens in body values
+                        let bodyValue = item.value;
+                        Object.entries(tokenValues).forEach(([key, value]) => {
+                            const placeholder = `{{${key}}}`;
+                            bodyValue = bodyValue.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+                        });
+                        bodyObj[item.key] = bodyValue;
+                    }
+                });
+                requestOptions.body = JSON.stringify(bodyObj);
+                requestOptions.headers = {
+                    ...requestOptions.headers,
+                    'Content-Type': 'application/json'
+                };
+            }
+
+            console.log('Making API request:', { url, options: requestOptions });
+
+            const response = await fetch(url, requestOptions);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseText = await response.text();
+            let responseData;
+
+            try {
+                responseData = JSON.parse(responseText);
+                setJsonResponse(JSON.stringify(responseData, null, 2));
+            } catch {
+                // If not JSON, show as text
+                setJsonResponse(responseText);
+                responseData = { raw: responseText };
+            }
+
+            const flat = flattenJson(responseData);
+            const pairs = Object.entries(flat).map(([key, value]) => ({ key, value }));
+            setKvPairs(pairs);
+            onTestResult(pairs);
+
         } catch (e: any) {
-            setError("Invalid JSON");
+            console.error('API call failed:', e);
+            setError(e.message || "Failed to make API request");
             setKvPairs([]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -306,53 +417,57 @@ function TestResponseSection({
             {/* Radio group for mode */}
             <div className="flex flex-col gap-2 mb-2">
                 <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                        type="radio"
-                        name="test-mode"
-                        checked={mode === "live"}
-                        onChange={() => setMode("live")}
-                        className="accent-primary mt-1"
-                    />
                     <span>
                         <span className="font-medium block">Live response</span>
                         <span className="text-xs text-muted-foreground block">Test with live data from the API to make sure it is configured correctly.</span>
                     </span>
                 </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                        type="radio"
-                        name="test-mode"
-                        checked={mode === "example"}
-                        onChange={() => setMode("example")}
-                        className="accent-primary mt-1"
-                    />
-                    <span>
-                        <span className="font-medium block">Example response</span>
-                        <span className="text-xs text-muted-foreground block">Use example JSON data if the API is not ready.</span>
-                    </span>
-                </label>
             </div>
 
-            {/* Example JSON textarea */}
-            {mode === "example" && (
-                <div>
-                    <label className="block text-xs font-medium mb-1">Example JSON</label>
-                    <textarea
-                        className="w-full font-mono text-xs rounded border border-border bg-muted p-2"
-                        rows={8}
-                        value={exampleJson}
-                        onChange={e => setExampleJson(e.target.value)}
-                    />
+
+            {/* Data Input Values */}
+            {dataInputs.length > 0 ? (
+                <div className="space-y-3">
+                    <div className="font-medium">Data Input Values</div>
+                    <div className="text-xs text-muted-foreground mb-2">Enter values for the data inputs to test the API call</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {dataInputs.map((input) => (
+                            <div key={input.name} className="space-y-1">
+                                <label className="text-sm font-medium">{input.name}</label>
+                                <Input
+                                    placeholder={`Enter ${input.name.toLowerCase()}`}
+                                    value={tokenValues[input.name] || ""}
+                                    onChange={(e) => setTokenValues({
+                                        ...tokenValues,
+                                        [input.name]: e.target.value
+                                    })}
+                                />
+                                <p className="text-xs text-muted-foreground">{input.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="text-sm text-muted-foreground">
+                    No data inputs configured. The API will be called without any dynamic parameters.
                 </div>
             )}
 
             {/* Test response button */}
-            <Button className="mt-2" size="sm" variant="outline" onClick={handleTestResponse}>Test response</Button>
+            <Button
+                className="mt-2"
+                size="sm"
+                variant="outline"
+                onClick={handleTestResponse}
+                disabled={isLoading}
+            >
+                {isLoading ? "Testing..." : "Test response"}
+            </Button>
             {error && <div className="text-red-600 text-xs mt-1">{error}</div>}
 
             {/* Key-value table from response */}
             {kvPairs.length > 0 && (
-                <div className="overflow-x-auto rounded border border-border">
+                <div className="overflow-x-auto rounded border border-border" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -373,18 +488,20 @@ function TestResponseSection({
             )}
 
             {/* JSON response viewer with line numbers and syntax highlighting */}
-            <div className="bg-[#f8fafc] border border-border rounded-md overflow-x-auto text-xs font-mono relative">
-                <div className="flex">
-                    <div className="py-2 px-2 text-right select-none bg-[#f3f4f6] text-muted-foreground rounded-l-md border-r border-border">
-                        {lines.map((_, i) => (
-                            <div key={i} className="h-5 leading-5">{i + 1}</div>
-                        ))}
+            {jsonResponse && (
+                <div className="bg-[#f8fafc] border border-border rounded-md overflow-x-auto text-xs font-mono relative" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <div className="flex">
+                        <div className="py-2 px-2 text-right select-none bg-[#f3f4f6] text-muted-foreground rounded-l-md border-r border-border">
+                            {lines.map((_, i: number) => (
+                                <div key={i} className="h-5 leading-5">{i + 1}</div>
+                            ))}
+                        </div>
+                        <pre className="py-2 px-2 whitespace-pre-wrap overflow-x-auto" style={{ minWidth: 0 }}>
+                            <code dangerouslySetInnerHTML={{ __html: jsonResponse }} />
+                        </pre>
                     </div>
-                    <pre className="py-2 px-2 whitespace-pre-wrap overflow-x-auto" style={{ minWidth: 0 }}>
-                        <code dangerouslySetInnerHTML={{ __html: highlightJson(mode === "example" ? exampleJson : jsonResponse) }} />
-                    </pre>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
@@ -496,7 +613,7 @@ function DataAccessSection({
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto rounded border border-border bg-background">
+                    <div className="overflow-x-auto rounded border border-border bg-background" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -550,7 +667,7 @@ function DataAccessSection({
 
             {/* Summary for full access */}
             {dataAccessType === "full" && (
-                <div className="overflow-x-auto rounded border border-border bg-background">
+                <div className="overflow-x-auto rounded border border-border bg-background" style={{ maxHeight: '500px', overflowY: 'auto' }}>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -575,6 +692,56 @@ function DataAccessSection({
             </Button>
         </div>
     );
+}
+
+// Function to extract query parameters from URL
+function extractQueryParameters(url: string): Array<{ key: string; value: string }> {
+    try {
+        const urlObj = new URL(url);
+        const params: Array<{ key: string; value: string }> = [];
+
+        urlObj.searchParams.forEach((value, key) => {
+            params.push({ key, value });
+        });
+
+        return params;
+    } catch (error) {
+        // If URL is invalid, return empty array
+        return [];
+    }
+}
+
+// Function to build URL with parameters
+function buildUrlWithParams(baseUrl: string, parameters: Array<{ key: string; value: string }>): string {
+    try {
+        const urlObj = new URL(baseUrl);
+
+        // Clear existing search params
+        urlObj.search = '';
+
+        // Add parameters
+        parameters.forEach(({ key, value }) => {
+            if (key && value) {
+                urlObj.searchParams.append(key, value);
+            }
+        });
+
+        return urlObj.toString();
+    } catch (error) {
+        // If URL is invalid, return original URL
+        return baseUrl;
+    }
+}
+
+// Function to get base URL without parameters
+function getBaseUrl(url: string): string {
+    try {
+        const urlObj = new URL(url);
+        return `${urlObj.origin}${urlObj.pathname}`;
+    } catch (error) {
+        // If URL is invalid, return original URL
+        return url;
+    }
 }
 
 // TODO: use react-hook-form with zod resolver to validate the form
@@ -607,11 +774,18 @@ export default function CreateCustomActionPage() {
 
     // Test response state
     const [kvPairs, setKvPairs] = useState<{ key: string; value: string }[]>([]);
-    const [exampleResponse, setExampleResponse] = useState("");
 
     // Data access state
     const [dataAccessType, setDataAccessType] = useState<"full" | "limited">("full");
     const [allowedFields, setAllowedFields] = useState<string[]>([]);
+
+    // Synchronize URL with parameters
+    useEffect(() => {
+        if (apiUrl) {
+            const urlParams = extractQueryParameters(apiUrl);
+            setParameters(urlParams);
+        }
+    }, [apiUrl]);
 
     // Data input handlers
     const addDataInput = () => setDataInputs([...dataInputs, { name: "", type: "Text", description: "", array: false }]);
@@ -620,17 +794,38 @@ export default function CreateCustomActionPage() {
 
     // Key-value pair handlers
     const addKeyValue = (type: string) => {
-        if (type === "parameters") setParameters([...parameters, { key: "", value: "" }]);
+        if (type === "parameters") {
+            const newParameters = [...parameters, { key: "", value: "" }];
+            setParameters(newParameters);
+            // Update URL with new parameters
+            const baseUrl = getBaseUrl(apiUrl);
+            const newUrl = buildUrlWithParams(baseUrl, newParameters);
+            setApiUrl(newUrl);
+        }
         if (type === "headers") setHeaders([...headers, { key: "", value: "" }]);
         if (type === "body") setBody([...body, { key: "", value: "" }]);
     };
     const removeKeyValue = (type: string, idx: number) => {
-        if (type === "parameters") setParameters(parameters.filter((_, i) => i !== idx));
+        if (type === "parameters") {
+            const newParameters = parameters.filter((_, i) => i !== idx);
+            setParameters(newParameters);
+            // Update URL with new parameters
+            const baseUrl = getBaseUrl(apiUrl);
+            const newUrl = buildUrlWithParams(baseUrl, newParameters);
+            setApiUrl(newUrl);
+        }
         if (type === "headers") setHeaders(headers.filter((_, i) => i !== idx));
         if (type === "body") setBody(body.filter((_, i) => i !== idx));
     };
     const updateKeyValue = (type: string, idx: number, field: string, value: any) => {
-        if (type === "parameters") setParameters(parameters.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+        if (type === "parameters") {
+            const newParameters = parameters.map((row, i) => i === idx ? { ...row, [field]: value } : row);
+            setParameters(newParameters);
+            // Update URL with new parameters
+            const baseUrl = getBaseUrl(apiUrl);
+            const newUrl = buildUrlWithParams(baseUrl, newParameters);
+            setApiUrl(newUrl);
+        }
         if (type === "headers") setHeaders(headers.map((row, i) => i === idx ? { ...row, [field]: value } : row));
         if (type === "body") setBody(body.map((row, i) => i === idx ? { ...row, [field]: value } : row));
     };
@@ -645,13 +840,12 @@ export default function CreateCustomActionPage() {
     const createConfig = () => ({
         dataInputs,
         apiMethod,
-        apiUrl,
-        parameters,
+        apiUrl: getBaseUrl(apiUrl), // Use base URL without parameters for API calls
+        parameters, // Parameters are handled separately
         headers,
         body,
         dataAccessType,
         allowedFields: dataAccessType === "limited" ? allowedFields : undefined,
-        exampleResponse,
     });
 
     // Handle save for each section
@@ -679,9 +873,6 @@ export default function CreateCustomActionPage() {
         setOpenSection("test");
     };
 
-    const handleTestSave = () => {
-        setOpenSection("data-access");
-    };
 
     const handleDataAccessSave = () => {
         console.log("data access save");
@@ -693,6 +884,7 @@ export default function CreateCustomActionPage() {
             return;
         }
 
+        // TODO: toast error message on failure is not showing up
         // Create the custom action
         const config = createConfig();
         console.log("config", JSON.stringify(config, null, 2));
@@ -740,15 +932,16 @@ export default function CreateCustomActionPage() {
                                 addDataInput={addDataInput}
                                 removeDataInput={removeDataInput}
                                 updateDataInput={updateDataInput}
+                                setDataInputs={setDataInputs}
                                 apiMethod={apiMethod}
                                 setApiMethod={(m: "GET" | "POST" | "PUT" | "DELETE") => setApiMethod(m)}
                                 apiUrl={apiUrl}
                                 setApiUrl={setApiUrl}
                                 apiTab={apiTab}
                                 setApiTab={setApiTab}
-                                // TODO: infer the parameters from the API URL
-                                // given (https://wttr.in/\{\{city}}?format=j1)
-                                // create format as param 
+                                // Parameters are now synchronized with the API URL
+                                // When URL changes → parameters update automatically
+                                // When parameters change → URL updates automatically 
                                 parameters={parameters}
                                 headers={headers}
                                 body={body}

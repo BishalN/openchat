@@ -140,7 +140,7 @@ export const customActionsTable = pgTable("custom_actions", {
   name: text("name").notNull(),
   whenToUse: text("when_to_use").notNull(),
   config: jsonb("config").$type<CustomActionConfig>().notNull(),
-  isActive: boolean("is_active").default(true),
+  isActive: boolean("is_active").default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at")
     .notNull()
