@@ -16,14 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
-import { Book, RefreshCw, HelpCircle, Send, Loader2 } from "lucide-react";
+import { Book, Send, Loader2 } from "lucide-react";
 import { updateAgentConfig } from "./actions";
 import { useAction } from "next-safe-action/hooks";
 import { useAgentQuery } from "@/hooks/use-agent/use-agent-query";
@@ -111,7 +105,6 @@ export default function PlaygroundPage() {
     handleSubmit: handleChatSubmit,
     error: chatError,
     status: chatStatus,
-    metadata,
     data,
   } = useChat({
     api: "/api/chat",
@@ -327,6 +320,11 @@ export default function PlaygroundPage() {
                 />
               );
             })}
+            {chatStatus === "submitted" && (
+              <span className="p-4 text-xs text-muted-foreground animate-pulse">
+                Thinking...
+              </span>
+            )}
             <div ref={messagesEndRef} />
           </div>
 

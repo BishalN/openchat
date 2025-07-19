@@ -102,14 +102,14 @@ export default function FilesPage() {
             : "Drag & drop files here, or click to select files"}
         </p>
         <p className="text-xs text-muted-foreground">
-          Supported File Types: pdf, doc, docx, txt
+          Supported File Types: PDF, CSV, Excel (.xlsx, .xls), Word (.docx, .doc), OpenDocument, Text (.txt, .md), RTF, PowerPoint (.pptx)
         </p>
         <input
           type="file"
           className="hidden"
           id="file-upload"
           onChange={handleFileChange}
-          accept=".pdf,.doc,.docx,.txt"
+          accept=".pdf,.csv,.xlsx,.xls,.docx,.doc,.odt,.ods,.odp,.txt,.md,.rtf,.pptx"
         />
         <label
           htmlFor="file-upload"
@@ -140,8 +140,8 @@ export default function FilesPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{file.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {file.mimeType.split("/")[1].toUpperCase()}
+                    <Badge variant="outline" className="text-xs truncate text-ellipsis">
+                      {file.mimeType.split("/")[1].toUpperCase().slice(0, 10)}
                     </Badge>
                   </div>
                   <div className="text-xs text-muted-foreground">

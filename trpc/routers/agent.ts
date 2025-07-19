@@ -275,6 +275,7 @@ export const agentRouter = createTRPCRouter({
       const { url } = input;
 
       // Scrape multiple websites (synchronous):
+      // TODO: execute js to get content from spa's
       const scrapedUrl = await firecrawl.scrapeUrl(url, { formats: ['markdown'] });
 
       if (!scrapedUrl.success) {

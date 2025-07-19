@@ -249,7 +249,7 @@ export function ChatInterfaceSettings() {
 
             {/* Preview TODO: make it responsive */}
             <div
-                className="fixed top-1/2 -translate-y-1/2 right-0"
+                className="fixed top-1/2 -translate-y-1/2 right-0 z-20"
             >
                 <EmbeddableChatWidget isCustomizingView={true} settings={settings} />
             </div>

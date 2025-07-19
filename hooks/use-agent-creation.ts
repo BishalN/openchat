@@ -29,7 +29,7 @@ export function useAgentCreation() {
     0
   );
   const totalSize = (text?.size || 0) + totalFileSize + (qa?.size || 0);
-  const maxSize = 400 * 1024; // 400 KB in bytes
+  const maxSize = 10 * 1024 * 1024; // 10 MB in bytes
 
   // Memoize the reset function to avoid recreation on each render
   const resetAll = useCallback(() => {
@@ -167,7 +167,7 @@ export function useAgentCreation() {
     !!text || files.length > 0 || websites.length > 0 || !!qa;
 
   // Check if size limit is exceeded
-  const isSizeLimitExceeded = totalSize > maxSize;
+  const hasSizeLimitExceeded = totalFileSize > maxSize;
 
   return {
     // Sources data
@@ -180,7 +180,7 @@ export function useAgentCreation() {
       totalSize,
       maxSize,
       hasAnySource,
-      isSizeLimitExceeded,
+      hasSizeLimitExceeded,
     },
 
     // Creation state

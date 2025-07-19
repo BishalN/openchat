@@ -13,6 +13,7 @@ import {
 import { cn, formatSize } from "@/lib/utils";
 import { TrainingProgress } from "@/components/training-progress";
 import { useAgentCreation } from "@/hooks/use-agent-creation";
+import { Loader } from "@/components/ui/loader";
 
 export default function CreateAgentLayout({
   children,
@@ -114,8 +115,10 @@ function SourcesSidebar() {
     totalSize,
     maxSize,
     hasAnySource,
-    isSizeLimitExceeded,
+    hasSizeLimitExceeded,
   } = sources;
+
+  console.log(JSON.stringify(sources, null, 2));
 
   return (
     <div className="border rounded-lg p-6 space-y-6 w-full h-full sticky top-6">
@@ -199,18 +202,15 @@ function SourcesSidebar() {
         // Show create button when not yet training
         <button
           onClick={handleCreateAgent}
-          disabled={isCreating || !hasAnySource || isSizeLimitExceeded}
+          disabled={isCreating || !hasAnySource || hasSizeLimitExceeded}
           className={cn(
             "w-full bg-black hover:bg-black/90 dark:bg-white dark:hover:bg-white/90 dark:text-black text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center justify-center",
-            (isCreating || !hasAnySource || isSizeLimitExceeded) &&
+            (isCreating || !hasAnySource || hasSizeLimitExceeded) &&
             "opacity-70 cursor-not-allowed"
           )}
         >
           {isCreating ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Creating...
-            </>
+            <Loader variant="circular" text="Creating..." size="sm" />
           ) : (
             "Create agent"
           )}

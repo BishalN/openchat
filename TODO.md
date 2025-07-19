@@ -22,12 +22,11 @@ TODO: fix the custom action latency problem
 
 TODO: Test custom action with user identity, by doing sth like updating the user subscriptions, for this create a simple environment and verify that this works
 
+TODO: create a presentation, full rundown of all features, should work flawlessly
 
-TODO: add some tests 
 
-TODO: loading spinners and toast cuz bad api use are not working probably cuz of prompt kit fix that
-
-TODO: create a algorithm for documentation
+TODO: create a algorithm for documentation fit
 TODO: read the documentation and make it ready
+
 
 TODO: make this project hostable in a docker container
