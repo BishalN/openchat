@@ -30,29 +30,6 @@ export default function DashboardLayout({
             >
               Agents
             </Link>
-            {/* TODO: ADD to roadmap */}
-            {/* <Link
-              href="/dashboard/usage"
-              className={cn(
-                "border-b-2 px-4 py-4 text-sm font-medium",
-                pathname === "/dashboard/usage"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Usage
-            </Link> */}
-            <Link
-              href="/dashboard/settings"
-              className={cn(
-                "border-b-2 px-4 py-4 text-sm font-medium",
-                pathname === "/dashboard/settings"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Settings
-            </Link>
           </nav>
         </div>
       </div>

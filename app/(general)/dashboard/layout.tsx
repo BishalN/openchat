@@ -1,5 +1,4 @@
 import type React from "react";
-import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
 import { UserDropdown } from "@/components/user-dropdown";
 
@@ -33,26 +32,6 @@ export default async function DashboardLayout({
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            {/* TODO: Add This Work on roadmap */}
-            {/* <NextLink
-              href="/docs"
-              className={buttonVariants({ variant: "ghost" })}
-            >
-              Docs
-            </NextLink>
-            <NextLink
-              href="/help"
-              className={buttonVariants({ variant: "ghost" })}
-            >
-              Help
-            </NextLink>
-            <NextLink
-              href="/notifications"
-              className={buttonVariants({ variant: "ghost" })}
-            >
-              Notifications
-            </NextLink> */}
-
             <ThemeSwitcher />
 
             <UserDropdown
@@ -62,13 +41,12 @@ export default async function DashboardLayout({
                 fullName: data?.user?.user_metadata.full_name || null,
                 id: data?.user?.id,
               }}
-              userInitials={`${
-                data?.user?.user_metadata.full_name
-                  ?.split(" ")
-                  // @ts-ignore
-                  .map((name) => name[0])
-                  .join("") || "U"
-              }`}
+              userInitials={`${data?.user?.user_metadata.full_name
+                ?.split(" ")
+                // @ts-ignore
+                .map((name) => name[0])
+                .join("") || "U"
+                }`}
             />
           </div>
         </div>

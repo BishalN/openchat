@@ -70,15 +70,6 @@ export function UserDropdown({ userData, userInitials }: UserDropdownProps) {
               <span>Dashboard</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/dashboard/settings"
-              className="flex items-center cursor-pointer"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
