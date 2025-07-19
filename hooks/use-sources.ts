@@ -2,11 +2,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation"; // Keep if needed for navigation on completion
-import { useToast } from "@/hooks/use-toast";
 import { useSourcesStore } from "@/store/use-sources-store";
 import { trpc } from "@/trpc/client";
 import { retrainAgent } from "@/app/(general)/dashboard/agent/[agentId]/sources/actions";
 import { TrainingStatus } from "@/types/training";
+import { toast } from "sonner";
 
 interface UseSourcesProps {
   agentId: string;
@@ -15,7 +15,6 @@ interface UseSourcesProps {
 export function useSources({ agentId }: UseSourcesProps) {
   const sourcesStore = useSourcesStore();
   const router = useRouter(); // Keep if needed
-  const { toast } = useToast();
 
   // State for retraining
   const [isRetraining, setIsRetraining] = useState(false);
@@ -117,11 +116,7 @@ export function useSources({ agentId }: UseSourcesProps) {
       setHasHandledRetrainingCompletion(true);
       setIsRetraining(false); // Ensure retraining state is reset
       setRetrainingData(null); // Clear retraining data
-      toast({
-        title: "Success",
-        description: "Agent retrained successfully!",
-        variant: "default",
-      });
+      toast.success("Agent retrained successfully!");
       refetchSources(); // Refetch sources to show updated state
       // Optionally navigate or perform other actions
       // router.push(`/dashboard/agent/${agentId}/playground`);
@@ -129,12 +124,7 @@ export function useSources({ agentId }: UseSourcesProps) {
       setHasHandledRetrainingCompletion(true);
       setIsRetraining(false); // Ensure retraining state is reset
       setRetrainingData(null); // Clear retraining data
-      toast({
-        title: "Error",
-        description:
-          retrainingStatus.message || "Retraining failed. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(retrainingStatus.message || "Retraining failed. Please try again.");
       refetchSources(); // Refetch sources to show state before failed attempt
     }
   }, [
@@ -154,11 +144,7 @@ export function useSources({ agentId }: UseSourcesProps) {
     // Get current sources from the store to send for retraining
     const currentSources = sourcesStore.sources;
     if (currentSources.length === 0 || isRetraining) {
-      toast({
-        title: "Cannot Retrain",
-        description: "No sources to retrain or retraining already in progress.",
-        variant: "destructive",
-      });
+      toast.error("No sources to retrain or retraining already in progress.");
       return;
     }
 
@@ -194,35 +180,24 @@ export function useSources({ agentId }: UseSourcesProps) {
         // If it is success and there is no runId than it means retraining is not needed so we can just return
         if (!result.data.runId) {
           setIsRetraining(false);
-          toast({
-            title: "No Retraining Needed",
-            description: "The agent is already up to date.",
-            variant: "default",
-          });
+          toast.success("The agent is already up to date.");
           return;
         }
         setRetrainingData({
           runId: result.data.runId,
           agentId: agentId, // Agent ID is known
         });
-        toast({
-          title: "Retraining Started",
-          description: "Agent retraining process has begun.",
-          variant: "default",
-        });
+        toast.success("Agent retraining process has begun.");
       } else {
         throw new Error(result?.error || "Failed to start retraining.");
       }
     } catch (error) {
       console.error("Error starting retraining:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred."
+      );
       setIsRetraining(false); // Reset state on error
       setHasHandledRetrainingCompletion(true); // Prevent polling
     }

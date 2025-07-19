@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { useAgentSettings } from "@/hooks/use-settings-mutation";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 
 interface TabButtonProps {
@@ -67,14 +67,10 @@ const EmbedCodeDisplay = ({
   description: string;
   code: string;
 }) => {
-  const { toast } = useToast();
   const copyCode = () => {
     navigator.clipboard.writeText(code);
-
-    toast({
-      title: "Code copied to clipboard",
+    toast("Code copied to clipboard", {
       description: "You can now paste it into your website.",
-      duration: 5000,
     });
   };
 
@@ -108,8 +104,6 @@ export default function ConnectPage() {
     isMakeAgentPublicLoading,
     isLoading,
   } = useAgentSettings(agentId as string);
-
-  const { toast } = useToast();
 
   // Embed option state
   const [selectedEmbed, setSelectedEmbed] = useState<"chatbubble" | "iframe">("chatbubble");
@@ -156,19 +150,25 @@ export default function ConnectPage() {
   const copySecret = () => {
     if (secretKey) {
       navigator.clipboard.writeText(secretKey);
-      toast({ title: "Secret key copied", description: "Keep it safe!", duration: 4000 });
+      toast("Secret key copied", {
+        description: "Keep it safe!",
+      });
     }
   };
   const codeSample = `const crypto = require('crypto');\nconst secret = '${secretKey || "••••••••••"}'; // Your verification secret key\nconst userId = current_user.id; // A string UUID to identify your user\nconst hash = crypto.createHmac('sha256', secret).update(userId).digest('hex');`;
   const copyCode = () => {
     navigator.clipboard.writeText(codeSample);
-    toast({ title: "Code copied to clipboard", description: "Paste it into your server code.", duration: 4000 });
+    toast("Code copied to clipboard", {
+      description: "Paste it into your server code.",
+    });
   };
 
   // Copy embed code
   const copyEmbedCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Code copied to clipboard", description: "You can now paste it into your website.", duration: 5000 });
+    toast("Code copied to clipboard", {
+      description: "You can now paste it into your website.",
+    });
   };
 
   // Render embed content based on privacy status

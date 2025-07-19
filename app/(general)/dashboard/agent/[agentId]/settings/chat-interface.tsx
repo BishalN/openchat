@@ -12,7 +12,7 @@ import { uploadFileToSupabase } from "@/utils/upload";
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { trpc } from "@/trpc/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 
 export function ChatInterfaceSettings() {
@@ -89,16 +89,10 @@ export function ChatInterfaceSettings() {
         // if there are no config, create it
         if (!config?.id) {
             await createConfig({ agentId: agentId as string, config: settings });
-            toast({
-                title: "Config created",
-                description: "Config created successfully",
-            });
+            toast.success("Config created");
         } else {
             await updateConfig({ agentId: agentId as string, config: settings });
-            toast({
-                title: "Config updated",
-                description: "Config updated successfully",
-            });
+            toast.success("Config updated");
         }
         setIsLoading(false);
     }

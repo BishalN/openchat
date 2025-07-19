@@ -3,14 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
 import { useSourceStore } from "@/store/use-agent-creation/use-source-store";
 import { createAgent } from "@/app/(general)/dashboard/create-agent/actions";
 import { TrainingStatus } from "@/types/training";
+import { toast } from "sonner";
 
 export function useAgentCreation() {
   const router = useRouter();
-  const { toast } = useToast();
   const sourceStore = useSourceStore();
   const { text, file: files, websites, qa } = sourceStore;
 
@@ -90,11 +89,7 @@ export function useAgentCreation() {
       setHasHandledCompletion(true);
 
       // Show success toast
-      toast({
-        title: "Success",
-        description: "Agent created and trained successfully!",
-        variant: "default",
-      });
+      toast.success("Agent created and trained successfully!");
 
       // Reset source store
       sourceStore.resetSourceData();
@@ -106,12 +101,7 @@ export function useAgentCreation() {
       setHasHandledCompletion(true);
 
       // Show error toast
-      toast({
-        title: "Error",
-        description:
-          trainingStatus.message || "Training failed. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(trainingStatus.message || "Training failed. Please try again.");
 
       // Reset creation state to allow retry
       setIsCreating(false);
@@ -151,27 +141,14 @@ export function useAgentCreation() {
           agentId: result.data.agent?.id,
         });
 
-        toast({
-          title: "Agent Created",
-          description: "Training has started. Please wait...",
-          variant: "default",
-        });
+        toast.success("Agent Created");
       } else {
-        toast({
-          title: "Error",
-          description:
-            result?.data?.error || "Failed to create agent. Please try again.",
-          variant: "destructive",
-        });
+        toast.error(result?.data?.error || "Failed to create agent. Please try again.");
         setIsCreating(false);
       }
     } catch (error) {
       console.error("Error creating agent:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred. Please try again.");
       setIsCreating(false);
     }
   }, [

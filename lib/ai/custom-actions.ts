@@ -99,6 +99,10 @@ export async function createCustomActionTools(agentId: string, trace: any) {
             eq(customActionsTable.isActive, true)
         ),
     });
+    if (customActions.length === 0) {
+        getCustomActionsSpan.end({ output: { actionCount: 0 } });
+        return {};
+    }
 
     console.log("customActions", JSON.stringify(customActions, null, 2));
 

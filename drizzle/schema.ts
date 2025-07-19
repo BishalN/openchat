@@ -11,16 +11,13 @@ import {
   vector,
   uuid,
   varchar,
-  json,
   unique,
 } from "drizzle-orm/pg-core";
 
 export interface AgentConfig {
   temperature?: number;
-  maxTokens?: number;
   model?: string;
   systemPrompt?: string;
-  instructions?: string;
 }
 
 // Chat Interface Config type (matches app/(general)/dashboard/agent/[agentId]/settings/chat-interface.tsx)

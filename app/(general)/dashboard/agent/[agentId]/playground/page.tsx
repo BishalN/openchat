@@ -9,7 +9,6 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { toast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -34,6 +33,15 @@ import {
 } from "@/lib/schemas/agent-config";
 import { ChatMessage } from "./chat-message";
 import { isNewConversationCreated } from "@/lib/utils";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { toast } from "sonner";
 
 // Form schema derived from the server action schema
 const formSchema = agentConfigActionSchema.omit({ agentId: true });
@@ -69,28 +77,18 @@ export default function PlaygroundPage() {
   const { execute, status } = useAction(updateAgentConfig, {
     onSuccess: ({ data }) => {
       if (data?.success) {
-        toast({
-          title: "Success",
-          description: "Agent configuration saved successfully",
-        });
+        toast.success("Agent configuration saved successfully");
         if (data.data) {
           reset({ config: data.data.config }, { keepDirty: false });
         }
       } else {
-        toast({
-          title: "Error",
-          description: data?.error || "Failed to save agent configuration",
-          variant: "destructive",
-        });
+        toast.error(data?.error || "Failed to save agent configuration");
       }
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description:
-          error.error.serverError || error.error.bindArgsValidationErrors,
-        variant: "destructive",
-      });
+      toast.error(
+        error.error.serverError || error.error.bindArgsValidationErrors
+      );
     },
   });
 
@@ -141,11 +139,7 @@ export default function PlaygroundPage() {
   // Show chat error if any
   useEffect(() => {
     if (chatError) {
-      toast({
-        title: "Chat Error",
-        description: chatError.message || "Failed to connect to chat API",
-        variant: "destructive",
-      });
+      toast.error(chatError.message || "Failed to connect to chat API");
     }
   }, [chatError]);
 
@@ -163,201 +157,159 @@ export default function PlaygroundPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          Playground
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <HelpCircle className="h-5 w-5 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="w-80 text-sm">
-                  Test your AI agent with different settings and prompts.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </h1>
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="mr-2">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 max-w-sm w-full">
+              <SheetHeader className="p-4 border-b">
+                <SheetTitle>Agent Configuration</SheetTitle>
+              </SheetHeader>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-4">
+                <Card>
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        className="w-full flex items-center gap-2"
+                        disabled={!isDirty || status === "executing"}
+                      >
+                        {status === "executing" ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Book className="h-4 w-4" />
+                            <span>Save to agent</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Model</span>
+                      </div>
+                      <Controller
+                        name="config.model"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+                              <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                              <SelectItem value="gemini-2.0-pro">Gemini 2.0 Pro</SelectItem>
+                              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.config?.model && (
+                        <p className="text-xs text-red-500">
+                          {errors.config.model.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Temperature</span>
+                      </div>
+                      <Controller
+                        name="config.temperature"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="flex items-center gap-4">
+                            <Slider
+                              value={[field.value]}
+                              onValueChange={([value]) => field.onChange(value)}
+                              max={1}
+                              step={0.1}
+                              className="flex-1"
+                            />
+                            <span className="text-sm font-medium w-6">
+                              {field.value}
+                            </span>
+                          </div>
+                        )}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground pt-1">
+                        <span>Reserved</span>
+                        <span>Creative</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">System prompt</h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      type="button"
+                      onClick={() => {
+                        if (initialConfig) {
+                          setValue(
+                            "config.systemPrompt",
+                            initialConfig.systemPrompt || "",
+                            { shouldDirty: true }
+                          );
+                        }
+                      }}
+                    >
+                    </Button>
+                  </div>
+                  <Controller
+                    name="config.systemPrompt"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select prompt" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ai-agent">AI agent</SelectItem>
+                          <SelectItem value="customer-support">
+                            Customer Support
+                          </SelectItem>
+                          <SelectItem value="sales-agent">Sales Agent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Instructions</h3>
+                  <Controller
+                    name="config.instructions"
+                    control={control}
+                    render={({ field }) => (
+                      <Textarea {...field} className="min-h-[200px] text-sm" />
+                    )}
+                  />
+                </div>
+              </form>
+            </SheetContent>
+          </Sheet>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Playground
+          </h1>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6">
-        {/* Left sidebar with configuration */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="w-full flex items-center gap-2"
-                  disabled={!isDirty || status === "executing"}
-                >
-                  {status === "executing" ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Book className="h-4 w-4" />
-                      <span>Save to agent</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Status:</span>
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                  <span className="text-sm">Trained</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Model</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="w-80 text-sm">
-                          The AI model used to generate responses.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Controller
-                  name="config.model"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                        <SelectItem value="claude-3-5-sonnet">
-                          Claude 3.5 Sonnet
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.config?.model && (
-                  <p className="text-xs text-red-500">
-                    {errors.config.model.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Temperature</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="w-80 text-sm">
-                          Controls randomness: 0 is deterministic, higher values
-                          are more creative.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Controller
-                  name="config.temperature"
-                  control={control}
-                  render={({ field }) => (
-                    <div className="flex items-center gap-4">
-                      <Slider
-                        value={[field.value]}
-                        onValueChange={([value]) => field.onChange(value)}
-                        max={1}
-                        step={0.1}
-                        className="flex-1"
-                      />
-                      <span className="text-sm font-medium w-6">
-                        {field.value}
-                      </span>
-                    </div>
-                  )}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground pt-1">
-                  <span>Reserved</span>
-                  <span>Creative</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* <div className="space-y-2">
-            <h3 className="text-sm font-medium">AI Actions</h3>
-            <Card className="p-4 text-center text-sm text-muted-foreground">
-              No actions found
-            </Card>
-          </div> */}
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">System prompt</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                type="button"
-                onClick={() => {
-                  if (initialConfig) {
-                    setValue(
-                      "config.systemPrompt",
-                      initialConfig.systemPrompt || "",
-                      { shouldDirty: true }
-                    );
-                  }
-                }}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-            <Controller
-              name="config.systemPrompt"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select prompt" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ai-agent">AI agent</SelectItem>
-                    <SelectItem value="customer-support">
-                      Customer Support
-                    </SelectItem>
-                    <SelectItem value="sales-agent">Sales Agent</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Instructions</h3>
-            <Controller
-              name="config.instructions"
-              control={control}
-              render={({ field }) => (
-                <Textarea {...field} className="min-h-[200px] text-sm" />
-              )}
-            />
-          </div>
-        </form>
-
+      <div className="max-w-2xl">
         {/* Right side chat interface */}
         <div className="border rounded-lg flex flex-col h-[600px] bg-muted/10">
           <div
@@ -365,28 +317,6 @@ export default function PlaygroundPage() {
             role="log"
             aria-label="Chat messages"
           >
-            {/* {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === "user"
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "bg-gray-100 dark:bg-gray-800"
-                    }`}
-                >
-                  {message.parts.map((part, i) => {
-                    switch (part.type) {
-                      case "text":
-                        return (
-                          <div key={`${message.id}-${i}`}>{part.text}</div>
-                        );
-                    }
-                  })}
-                </div>
-              </div>
-            ))} */}
             {messages.map((message, index) => {
               return (
                 <ChatMessage

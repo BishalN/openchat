@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/trpc/client";
-import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { TabType } from "@/app/(general)/dashboard/agent/[agentId]/settings/page";
+import { toast } from "sonner";
 
 interface AgentGeneralSettings {
   name: string;
@@ -11,7 +11,6 @@ interface AgentGeneralSettings {
 
 export function useAgentSettings(agentId: string) {
   const router = useRouter();
-  const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<TabType>("general");
 
@@ -52,19 +51,11 @@ export function useAgentSettings(agentId: string) {
     error: updateError,
   } = trpc.agent.generalUpdate.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Agent updated",
-        description: "Your agent has been updated.",
-        variant: "default",
-      });
+      toast.success("Agent updated");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message);
     },
   });
 
@@ -76,22 +67,12 @@ export function useAgentSettings(agentId: string) {
   } = trpc.agent.generalUpdate.useMutation({
     onSuccess: (data) => {
       const newStatus = data.isPublic ? "public" : "private";
-      toast({
-        title: `Agent is now ${newStatus}`,
-        description: data.isPublic
-          ? "Your agent is now accessible to others."
-          : "Your agent is now private.",
-        variant: "default",
-      });
+      toast.success(`Agent is now ${newStatus}`);
 
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update agent visibility",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to update agent visibility");
     },
   });
 
@@ -99,20 +80,12 @@ export function useAgentSettings(agentId: string) {
   const { mutateAsync: deleteAgent, isPending: isDeletingMutation } =
     trpc.agent.delete.useMutation({
       onSuccess: () => {
-        toast({
-          title: "Agent deleted",
-          description: "Your agent has been permanently deleted.",
-          variant: "default",
-        });
+        toast.success("Agent deleted");
         // Redirect to agents list after successful deletion
         router.push("/dashboard/agents");
       },
       onError: (error) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to delete agent",
-          variant: "destructive",
-        });
+        toast.error(error.message || "Failed to delete agent");
         setIsDeleting(false);
       },
     });
@@ -123,19 +96,11 @@ export function useAgentSettings(agentId: string) {
     isPending: isDeletingConversationsMutation,
   } = trpc.agent.deleteAllConversations.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Conversations deleted",
-        description: "All conversations for this agent have been deleted.",
-        variant: "default",
-      });
+      toast.success("Conversations deleted");
       setIsDeleteConversationsDialogOpen(false);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete conversations",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to delete conversations");
       setIsDeletingConversations(false);
     },
   });
@@ -196,12 +161,7 @@ export function useAgentSettings(agentId: string) {
 
     // Verify confirmation text matches agent name exactly
     if (deleteConfirmationText !== data.name) {
-      toast({
-        title: "Confirmation failed",
-        description:
-          "The agent name you entered doesn't match. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("The agent name you entered doesn't match. Please try again.");
       return;
     }
 

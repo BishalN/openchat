@@ -2,9 +2,8 @@ import { findRelevantContent } from "@/lib/ai/embedding";
 import { google } from "@ai-sdk/google";
 import { appendResponseMessages, createDataStreamResponse, Message, streamText } from "ai";
 import { z } from "zod";
-import { agentsTable, conversationsTable, Identity } from "@/drizzle/schema";
+import { AgentConfig, agentsTable, conversationsTable, Identity } from "@/drizzle/schema";
 import { db } from "@/drizzle";
-import { errorHandler } from "../chat/utils";
 import { upsertGuestConversation } from "@/drizzle/queries";
 import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config";
 import { eq } from "drizzle-orm";
@@ -50,6 +49,7 @@ export async function POST(req: Request) {
       return new Response("Agent not found", { status: 404 });
     }
     const secretKey = agent.secretKey!;
+    const config = agent.config as AgentConfig;
 
     // Verify the identity
     if (identity && !verifyIdentity(identity, secretKey)) {
@@ -104,10 +104,11 @@ export async function POST(req: Request) {
               langfuseTraceId: trace.id,
             },
           },
-          model: google("gemini-2.0-flash"),
+          model: google(config.model ?? "gemini-2.0-flash"),
           messages,
           maxSteps: 10,
-          system: SYSTEM_PROMPT_DEFAULT,
+          system: config.systemPrompt ?? SYSTEM_PROMPT_DEFAULT,
+          temperature: config.temperature ?? 0.4,
           tools: {
             getContext: {
               description: "Get the context from the db",

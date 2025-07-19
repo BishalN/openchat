@@ -3,6 +3,8 @@ import { google } from "@ai-sdk/google";
 import { appendResponseMessages, createDataStreamResponse, Message, streamText, } from "ai";
 import { z } from "zod";
 import {
+  AgentConfig,
+  agentsTable,
   conversationsTable,
 } from "@/drizzle/schema";
 import { createClient } from "@/lib/supabase/server";
@@ -41,6 +43,13 @@ export async function POST(req: Request) {
       conversationId?: string;
       agentId: string;
     };
+    const agent = await db.query.agentsTable.findFirst({
+      where: eq(agentsTable.id, body.agentId),
+    });
+    if (!agent) {
+      return new Response("Agent not found", { status: 404 });
+    }
+    const config = agent.config as AgentConfig;
 
     // Create a trace for the conversation
     const trace = langfuse.trace({
@@ -113,10 +122,11 @@ export async function POST(req: Request) {
               langfuseTraceId: trace.id,
             },
           },
-          model: google("gemini-2.0-flash"),
+          model: google(config.model ?? "gemini-2.0-flash"),
           messages,
           maxSteps: 10,
-          system: SYSTEM_PROMPT_DEFAULT,
+          system: config.systemPrompt ?? SYSTEM_PROMPT_DEFAULT,
+          temperature: config.temperature ?? 0.4,
           tools: {
             getContext: {
               description: "Get the context from the db",
