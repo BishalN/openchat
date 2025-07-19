@@ -12,101 +12,45 @@ import { Trash } from "lucide-react";
 import { useCustomActions } from "@/hooks/use-custom-actions";
 import { toast } from "sonner";
 import { extractQueryParameters, buildUrlWithParams, getBaseUrl, flattenJson } from "@/lib/utils";
+import { GeneralSection, ApiSection, TestResponseSection, DataAccessSection } from "./components";
 
 // TODO: by default keep actions as inactive and user should make it active
 // also bunch of ui / testing is not working, fix that
 
-// General Section Component
-export function GeneralSection({
-    actionName,
-    setActionName,
-    whenToUse,
-    setWhenToUse,
-    onSave,
-    isSaving,
-}: {
-    actionName: string;
-    setActionName: (name: string) => void;
-    whenToUse: string;
-    setWhenToUse: (text: string) => void;
-    onSave: () => void;
-    isSaving: boolean;
-}) {
-    return (
-        <div className="space-y-4 py-2">
-            <div>
-                <label className="block text-sm font-medium mb-1">Action Name</label>
-                <Input
-                    placeholder="e.g. Get Weather"
-                    value={actionName}
-                    onChange={(e) => setActionName(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">A descriptive name for this action. This will help the AI agent know when to use it.</p>
-            </div>
-            <div>
-                <label className="block text-sm font-medium mb-1">When to use</label>
-                <Textarea
-                    placeholder="Describe when the AI agent should use this action. Include examples."
-                    rows={4}
-                    value={whenToUse}
-                    onChange={(e) => setWhenToUse(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">Detailed description explaining when the AI agent should use this action and API. Include examples of the data this action provides and customer queries it helps answer.</p>
-            </div>
-            <Button
-                className="mt-4"
-                onClick={onSave}
-                disabled={isSaving || !actionName.trim() || !whenToUse.trim()}
-            >
-                {isSaving ? "Saving..." : "Save and Continue"}
-            </Button>
-        </div>
-    );
-}
+// TODO: use react-hook-form with zod resolver to validate the form
+export default function CreateCustomActionPage() {
+    const router = useRouter();
+    const params = useParams();
+    const agentId = params.agentId as string;
 
-// TODO: while sending the api url to back remove the params from the url, just send the url
-// API Section Component
-export function ApiSection({
-    dataInputs,
-    addDataInput,
-    removeDataInput,
-    updateDataInput,
-    setDataInputs,
-    apiMethod,
-    setApiMethod,
-    apiUrl,
-    setApiUrl,
-    apiTab,
-    setApiTab,
-    parameters,
-    headers,
-    body,
-    addKeyValue,
-    removeKeyValue,
-    updateKeyValue,
-    onSave,
-    isSaving,
-}: {
-    dataInputs: Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>;
-    addDataInput: () => void;
-    removeDataInput: (idx: number) => void;
-    updateDataInput: (idx: number, field: string, value: any) => void;
-    setDataInputs: (inputs: Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>) => void;
-    apiMethod: "GET" | "POST" | "PUT" | "DELETE";
-    setApiMethod: (m: "GET" | "POST" | "PUT" | "DELETE") => void;
-    apiUrl: string;
-    setApiUrl: (u: string) => void;
-    apiTab: string;
-    setApiTab: (t: string) => void;
-    parameters: Array<{ key: string; value: string }>;
-    headers: Array<{ key: string; value: string }>;
-    body: Array<{ key: string; value: string }>;
-    addKeyValue: (type: string) => void;
-    removeKeyValue: (type: string, idx: number) => void;
-    updateKeyValue: (type: string, idx: number, field: string, value: any) => void;
-    onSave: () => void;
-    isSaving: boolean;
-}) {
+    // Use the custom actions hook
+    const { createAction, isCreating, } = useCustomActions(agentId);
+
+    const [openSection, setOpenSection] = useState("general");
+
+    // Form state
+    const [actionName, setActionName] = useState("");
+    const [whenToUse, setWhenToUse] = useState("");
+
+    // Data input table state
+    const [dataInputs, setDataInputs] = useState<Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>>([]);
+
+    // API request state
+    const [apiMethod, setApiMethod] = useState<"GET" | "POST" | "PUT" | "DELETE">("GET");
+    const [apiUrl, setApiUrl] = useState("");
+
+    // Tabs for params/headers/body
+    const [apiTab, setApiTab] = useState("parameters");
+    const [parameters, setParameters] = useState<Array<{ key: string; value: string }>>([]);
+    const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>([]);
+    const [body, setBody] = useState<Array<{ key: string; value: string }>>([]);
+
+    // Test response state
+    const [kvPairs, setKvPairs] = useState<{ key: string; value: string }[]>([]);
+
+    // Data access state
+    const [dataAccessType, setDataAccessType] = useState<"full" | "limited">("full");
+    const [allowedFields, setAllowedFields] = useState<string[]>([]);
     const handleAddVariable = () => {
         // Generate a default variable name
         const variableCount = dataInputs.length + 1;
@@ -497,24 +441,224 @@ export function TestResponseSection({
     );
 }
 
-export function DataAccessSection({
-    responsePairs,
-    dataAccessType,
-    setDataAccessType,
-    allowedFields,
-    setAllowedFields,
-    onSave,
-    isSaving,
-}: {
-    responsePairs: { key: string; value: string }[];
-    dataAccessType: "full" | "limited";
-    setDataAccessType: (type: "full" | "limited") => void;
-    allowedFields: string[];
-    setAllowedFields: (fields: string[]) => void;
-    onSave: () => void;
-    isSaving: boolean;
-}) {
-    const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(allowedFields));
+    // Synchronize URL with parameters
+    useEffect(() => {
+        if (apiUrl) {
+            const urlParams = extractQueryParameters(apiUrl);
+            setParameters(urlParams);
+        }
+    }, [apiUrl]);
+
+    // Data input handlers
+    const addDataInput = () => setDataInputs([...dataInputs, { name: "", type: "Text", description: "", array: false }]);
+    const removeDataInput = (idx: number) => setDataInputs(dataInputs.filter((_, i) => i !== idx));
+    const updateDataInput = (idx: number, field: string, value: any) => setDataInputs(dataInputs.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+
+    // Key-value pair handlers
+    const addKeyValue = (type: string) => {
+        if (type === "parameters") {
+            const newParameters = [...parameters, { key: "", value: "" }];
+            setParameters(newParameters);
+            // Update URL with new parameters
+            const baseUrl = getBaseUrl(apiUrl);
+            const newUrl = buildUrlWithParams(baseUrl, newParameters);
+            setApiUrl(newUrl);
+        }
+        if (type === "headers") setHeaders([...headers, { key: "", value: "" }]);
+        if (type === "body") setBody([...body, { key: "", value: "" }]);
+    };
+
+    const removeKeyValue = (type: string, idx: number) => {
+        if (type === "parameters") {
+            const newParameters = parameters.filter((_, i) => i !== idx);
+            setParameters(newParameters);
+            // Update URL with new parameters
+            const baseUrl = getBaseUrl(apiUrl);
+            const newUrl = buildUrlWithParams(baseUrl, newParameters);
+            setApiUrl(newUrl);
+        }
+        if (type === "headers") setHeaders(headers.filter((_, i) => i !== idx));
+        if (type === "body") setBody(body.filter((_, i) => i !== idx));
+    };
+
+    const updateKeyValue = (type: string, idx: number, field: string, value: any) => {
+        if (type === "parameters") {
+            const newParameters = parameters.map((row, i) => i === idx ? { ...row, [field]: value } : row);
+            setParameters(newParameters);
+            // Update URL with new parameters
+            const baseUrl = getBaseUrl(apiUrl);
+            const newUrl = buildUrlWithParams(baseUrl, newParameters);
+            setApiUrl(newUrl);
+        }
+        if (type === "headers") setHeaders(headers.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+        if (type === "body") setBody(body.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+    };
+
+    const createConfig = () => {
+        const config: any = {
+            url: apiUrl,
+            method: apiMethod,
+        };
+
+        if (headers.length > 0) {
+            config.headers = headers.reduce((acc: any, { key, value }) => {
+                if (key && value) acc[key] = value;
+                return acc;
+            }, {});
+        }
+
+        if (body.length > 0 && (apiMethod === "POST" || apiMethod === "PUT")) {
+            config.body = body.reduce((acc: any, { key, value }) => {
+                if (key && value) acc[key] = value;
+                return acc;
+            }, {});
+        }
+
+        return config;
+    };
+
+    const handleTestResult = (result: any) => {
+        const pairs = flattenJson(result);
+        setKvPairs(pairs);
+    };
+
+    const handleGeneralSave = () => {
+        console.log("general save");
+        if (!actionName.trim() || !whenToUse.trim()) {
+            toast("Please fill in all required fields", {
+                description: "Action name and when to use are required",
+                className: "bg-red-500 text-white",
+            });
+            return;
+        }
+        setOpenSection("api");
+    };
+
+    const handleApiSave = () => {
+        console.log("api save");
+        if (!apiUrl.trim()) {
+            toast("Please enter a valid API URL", {
+                description: "The API URL is required",
+                className: "bg-red-500 text-white",
+            });
+            return;
+        }
+        setOpenSection("test");
+    };
+
+    const handleDataAccessSave = () => {
+        console.log("data access save");
+        if (dataAccessType === "limited" && allowedFields.length === 0) {
+            toast("Please select at least one field for limited access", {
+                description: "At least one field is required for limited access",
+                className: "bg-red-500 text-white",
+            });
+            return;
+        }
+
+        // TODO: toast error message on failure is not showing up
+        // Create the custom action
+        const config = createConfig();
+        console.log("config", JSON.stringify(config, null, 2));
+        createAction({
+            agentId,
+            name: actionName,
+            whenToUse,
+            config,
+        });
+    };
+
+    return (
+        <div>
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-xl font-bold">Create Custom Action</h1>
+            </div>
+
+            {/* Accordion Sections */}
+            <Accordion type="single" collapsible value={openSection} onValueChange={setOpenSection} className="w-full max-w-4xl space-y-4">
+                {/* General Section */}
+                <Card className="px-4">
+                    <AccordionItem value="general">
+                        <AccordionTrigger>General</AccordionTrigger>
+                        <AccordionContent>
+                            <GeneralSection
+                                actionName={actionName}
+                                setActionName={setActionName}
+                                whenToUse={whenToUse}
+                                setWhenToUse={setWhenToUse}
+                                onSave={handleGeneralSave}
+                                isSaving={false}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
+
+                {/* API Section */}
+                <Card className="px-4">
+                    <AccordionItem value="api">
+                        <AccordionTrigger>API</AccordionTrigger>
+                        <AccordionContent>
+                            <ApiSection
+                                dataInputs={dataInputs}
+                                addDataInput={addDataInput}
+                                removeDataInput={removeDataInput}
+                                updateDataInput={updateDataInput}
+                                setDataInputs={setDataInputs}
+                                apiMethod={apiMethod}
+                                setApiMethod={(m: "GET" | "POST" | "PUT" | "DELETE") => setApiMethod(m)}
+                                apiUrl={apiUrl}
+                                setApiUrl={setApiUrl}
+                                apiTab={apiTab}
+                                setApiTab={setApiTab}
+                                parameters={parameters}
+                                headers={headers}
+                                body={body}
+                                addKeyValue={addKeyValue}
+                                removeKeyValue={removeKeyValue}
+                                updateKeyValue={updateKeyValue}
+                                onSave={handleApiSave}
+                                isSaving={false}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
+
+                {/* Test Response Section */}
+                <Card className="px-4">
+                    <AccordionItem value="test">
+                        <AccordionTrigger>Test Response</AccordionTrigger>
+                        <AccordionContent>
+                            <TestResponseSection
+                                dataInputs={dataInputs}
+                                config={createConfig()}
+                                onTestResult={handleTestResult}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
+
+                {/* Data Access Section */}
+                <Card className="px-4">
+                    <AccordionItem value="data-access">
+                        <AccordionTrigger>Data access</AccordionTrigger>
+                        <AccordionContent>
+                            <DataAccessSection
+                                responsePairs={kvPairs}
+                                dataAccessType={dataAccessType}
+                                setDataAccessType={setDataAccessType}
+                                allowedFields={allowedFields}
+                                setAllowedFields={setAllowedFields}
+                                onSave={handleDataAccessSave}
+                                isSaving={isCreating}
+                            />
+                        </AccordionContent>
+                    </AccordionItem>
+                </Card>
+            </Accordion>
+        </div>
+    );
+}
 
     // Handle field selection
     const toggleField = (fieldKey: string) => {
