@@ -130,7 +130,6 @@ export default function EditCustomActionPage() {
 
     // Handle test result
     const handleTestResult = (pairs: { key: string; value: string }[]) => {
-        console.log("test result", pairs);
         setKvPairs(pairs);
     };
 
@@ -148,7 +147,6 @@ export default function EditCustomActionPage() {
 
     // Handle save for each section
     const handleGeneralSave = () => {
-        console.log("general save");
         if (!actionName.trim() || !whenToUse.trim()) {
             toast("Please fill in all required fields", {
                 description: "Action name and when to use are required",
@@ -160,7 +158,6 @@ export default function EditCustomActionPage() {
     };
 
     const handleApiSave = () => {
-        console.log("api save");
         if (!apiUrl.trim()) {
             toast("Please enter a valid API URL", {
                 description: "The API URL is required",
@@ -173,7 +170,6 @@ export default function EditCustomActionPage() {
 
 
     const handleDataAccessSave = () => {
-        console.log("data access save");
         if (dataAccessType === "limited" && allowedFields.length === 0) {
             toast("Please select at least one field for limited access", {
                 description: "At least one field is required for limited access",
@@ -182,13 +178,10 @@ export default function EditCustomActionPage() {
             return;
         }
 
-        // TODO: toast error message on failure is not showing up
-        // Create the custom action
         const config = {
             ...createConfig(),
             ...action?.config,
         };
-        console.log("config", JSON.stringify(config, null, 2));
         updateAction({
             id: actionId,
             name: actionName,

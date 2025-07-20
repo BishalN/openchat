@@ -369,8 +369,6 @@ export function TestResponseSection({
                 };
             }
 
-            console.log('Making API request:', { url, options: requestOptions });
-
             const response = await fetch(url, requestOptions);
 
             if (!response.ok) {
@@ -775,7 +773,6 @@ export default function CreateCustomActionPage() {
 
     // Handle test result
     const handleTestResult = (pairs: { key: string; value: string }[]) => {
-        console.log("test result", pairs);
         setKvPairs(pairs);
     };
 
@@ -793,7 +790,6 @@ export default function CreateCustomActionPage() {
 
     // Handle save for each section
     const handleGeneralSave = () => {
-        console.log("general save");
         if (!actionName.trim() || !whenToUse.trim()) {
             toast("Please fill in all required fields", {
                 description: "Action name and when to use are required",
@@ -805,7 +801,6 @@ export default function CreateCustomActionPage() {
     };
 
     const handleApiSave = () => {
-        console.log("api save");
         if (!apiUrl.trim()) {
             toast("Please enter a valid API URL", {
                 description: "The API URL is required",
@@ -818,7 +813,6 @@ export default function CreateCustomActionPage() {
 
 
     const handleDataAccessSave = () => {
-        console.log("data access save");
         if (dataAccessType === "limited" && allowedFields.length === 0) {
             toast("Please select at least one field for limited access", {
                 description: "At least one field is required for limited access",
@@ -827,10 +821,7 @@ export default function CreateCustomActionPage() {
             return;
         }
 
-        // TODO: toast error message on failure is not showing up
-        // Create the custom action
         const config = createConfig();
-        console.log("config", JSON.stringify(config, null, 2));
         createAction({
             agentId,
             name: actionName,

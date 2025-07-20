@@ -34,7 +34,6 @@ export const createAgent = authActionClient
       ctx: { user },
       parsedInput: { file, qa, text, websites },
     }) => {
-      console.log("request received", { file, qa, text, websites });
       try {
         const result = await db.transaction(async (tx) => {
           // Create agent

@@ -104,7 +104,6 @@ export async function createCustomActionTools(agentId: string, trace: any) {
         return {};
     }
 
-    console.log("customActions", JSON.stringify(customActions, null, 2));
 
     getCustomActionsSpan.end({ output: { actionCount: customActions.length } });
 
@@ -137,7 +136,6 @@ export async function createCustomActionTools(agentId: string, trace: any) {
             parameterSchema[input.name] = schema.describe(input.description);
         });
         // TODO: data inputs are not working here, lets fix this thing, they don't show up in custom tools, right now
-        console.log("parameterSchema", JSON.stringify(parameterSchema, null, 2));
 
         const sanitizedName = sanitizeActionName(action.name);
         actionNameMapping[sanitizedName] = action;
@@ -151,7 +149,6 @@ export async function createCustomActionTools(agentId: string, trace: any) {
         };
     }
 
-    console.log("customTools", JSON.stringify(customTools, null, 2));
 
     return customTools;
 } 

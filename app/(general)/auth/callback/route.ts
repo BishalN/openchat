@@ -34,8 +34,6 @@ export async function GET(request: Request) {
               updatedAt: new Date(),
             },
           });
-
-        console.log("User profile created or updated successfully");
       } catch (error) {
         console.error("Error creating user profile:", error);
       }

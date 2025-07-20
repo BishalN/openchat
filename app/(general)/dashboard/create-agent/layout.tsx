@@ -118,7 +118,6 @@ function SourcesSidebar() {
     hasSizeLimitExceeded,
   } = sources;
 
-  console.log(JSON.stringify(sources, null, 2));
 
   return (
     <div className="border rounded-lg p-6 space-y-6 w-full h-full sticky top-6">

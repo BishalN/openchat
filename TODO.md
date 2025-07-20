@@ -22,8 +22,7 @@ TODO: fix the custom action latency problem
 
 TODO: Test custom action with user identity, by doing sth like updating the user subscriptions, for this create a simple environment and verify that this works
 
-TODO: create a presentation, full rundown of all features, should work flawlessly
-
+TODO: create a presentation, full rundown of all features, should work flawlessly, maybe use the slidev thing for this, it markdown format
 
 TODO: create a algorithm for documentation fit
 TODO: read the documentation and make it ready

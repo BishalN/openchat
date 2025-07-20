@@ -89,7 +89,6 @@ export default function WebsitePage() {
 
   const handleFetchLink = async () => {
     if (websiteUrl) {
-      console.log("Fetching links for", protocol + websiteUrl)
       try {
         const id = nanoid();
         addSource({
