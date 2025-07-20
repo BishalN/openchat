@@ -1,5 +1,5 @@
 import { inngest } from "./client";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { SimpleTextSplitter } from "./simple-text-splitter";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@/drizzle";
 import { embeddingsTable } from "@/drizzle/schema";
@@ -38,7 +38,7 @@ export const createAgentPipeline = inngest.createFunction(
       // 1. Process each source type (chunking)
       const chunks = await step.run("Process sources", async () => {
         // TODO: maybe use a intelligent chunk size instead of static one here
-        const textSplitter = new RecursiveCharacterTextSplitter({
+        const textSplitter = new SimpleTextSplitter({
           chunkSize: 1000,
           chunkOverlap: 200,
         });

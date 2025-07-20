@@ -8,6 +8,7 @@ interface ChatMessageProps {
     parts: MessagePart[];
     role: string;
     userName: string;
+    userColor: string;
 }
 
 const components: Components = {
@@ -91,19 +92,20 @@ const ToolInvocation = ({
     );
 };
 
-export const ChatMessage = ({ parts, role, userName }: ChatMessageProps) => {
+export const ChatMessage = ({ parts, role, userName, userColor }: ChatMessageProps) => {
     const isAI = role === "assistant";
     return (
         <div className={`flex ${isAI ? "justify-start" : "justify-end"}`}>
             {isAI && (
-                <div className="bg-black text-white rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2 flex-shrink-0">
+                <div className={`bg-gray-800 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold mr-2 flex-shrink-0`}>
                     {userName}
                 </div>
             )}
             <div
+                style={{ backgroundColor: !isAI ? userColor : "" }}
                 className={`max-w-[80%] rounded-lg px-4 py-2 ${isAI
                     ? "bg-gray-200 text-gray-800"
-                    : "bg-blue-500 text-white"
+                    : `bg-blue-500 text-white`
                     }`}
             >
                 {parts.map((part, index) => {

@@ -24,8 +24,8 @@ TODO: Test custom action with user identity, by doing sth like updating the user
 
 TODO: create a presentation, full rundown of all features, should work flawlessly, maybe use the slidev thing for this, it markdown format
 
-TODO: create a algorithm for documentation fit
-TODO: read the documentation and make it ready
 
+
+TODO: create project report
 
 TODO: make this project hostable in a docker container

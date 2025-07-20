@@ -199,6 +199,7 @@ export default function EmbeddableChatWidget({
                 parts={message.parts ?? []}
                 role={message.role}
                 userName={message.role === "user" ? "You" : displayName}
+                userColor={settings.userMessageColor ?? "black"}
               />
             );
           })}
@@ -231,8 +232,8 @@ export default function EmbeddableChatWidget({
         {/* Suggested Messages - now just above the input area, horizontal scroll */}
         {suggestedMessages.length > 0 && (messages.length === initialMessages.length) && (
           <div
-            className="flex gap-2 mt-2 mb-2 justify-end overflow-x-auto pr-3"
-            style={{ scrollbarWidth: "thin" }}
+            className="flex gap-2 mt-2 mb-2 justify-start overflow-x-auto px-3"
+            style={{ scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" }}
           >
             {suggestedMessages.map((msg, idx) => (
               <button

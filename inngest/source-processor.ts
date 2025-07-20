@@ -1,5 +1,5 @@
 import { loadDocument } from "./loaders";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { SimpleTextSplitter } from "./simple-text-splitter";
 import { FileSource, QASource, Sources, TextSource, WebsiteSource } from "./client";
 
 export type Chunk = {
@@ -12,7 +12,7 @@ export type Chunk = {
 
 export class SourceProcessor {
     constructor(
-        private textSplitter: RecursiveCharacterTextSplitter,
+        private textSplitter: SimpleTextSplitter,
         private supabaseAdmin: any // Should be typed as SupabaseClient if available
     ) { }
 
