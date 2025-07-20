@@ -19,6 +19,21 @@ function sanitizeActionName(name: string): string {
     return sanitized;
 }
 
+// Helper function to process template variables in strings
+function processTemplateVariables(value: string, parameters: Record<string, any>): string {
+    let processedValue = value;
+    
+    // Replace template variables with actual parameter values
+    Object.entries(parameters).forEach(([key, value]) => {
+        const templateVar = `{{${key}}}`;
+        if (processedValue.includes(templateVar)) {
+            processedValue = processedValue.replace(new RegExp(templateVar, 'g'), String(value));
+        }
+    });
+    
+    return processedValue;
+}
+
 // Helper function to execute custom actions
 export async function executeCustomAction(action: any, parameters: any, trace: any, identity?: any) {
     const executeActionSpan = trace.span({
@@ -29,12 +44,17 @@ export async function executeCustomAction(action: any, parameters: any, trace: a
     try {
         const { config } = action;
 
+        console.log("Executing custom action:", action.name);
+        console.log("Parameters:", parameters);
+        console.log("Identity:", identity);
+
         // Build the request
         const url = new URL(config.apiUrl);
 
         // Add query parameters
         config.parameters.forEach((param: any) => {
-            url.searchParams.append(param.key, param.value);
+            const paramValue = processTemplateVariables(param.value, parameters);
+            url.searchParams.append(param.key, paramValue);
         });
 
         // Add dynamic parameters from LLM
@@ -44,7 +64,8 @@ export async function executeCustomAction(action: any, parameters: any, trace: a
 
         const headers: Record<string, string> = {};
         config.headers.forEach((header: any) => {
-            headers[header.key] = header.value;
+            const headerValue = processTemplateVariables(header.value, parameters);
+            headers[header.key] = headerValue;
         });
 
         // Add identity headers if available
@@ -60,12 +81,17 @@ export async function executeCustomAction(action: any, parameters: any, trace: a
         if (config.apiMethod !== 'GET' && config.body.length > 0) {
             body = JSON.stringify(
                 config.body.reduce((acc: any, item: any) => {
-                    acc[item.key] = item.value;
+                    const bodyValue = processTemplateVariables(item.value, parameters);
+                    acc[item.key] = bodyValue;
                     return acc;
                 }, {})
             );
             headers['Content-Type'] = 'application/json';
         }
+
+        console.log(`Making ${config.apiMethod} request to: ${url.toString()}`);
+        console.log('Headers:', headers);
+        if (body) console.log('Body:', body);
 
         const response = await fetch(url.toString(), {
             method: config.apiMethod,
@@ -73,7 +99,24 @@ export async function executeCustomAction(action: any, parameters: any, trace: a
             body,
         });
 
-        const result = await response.json();
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            executeActionSpan.end({ output: { error: `HTTP ${response.status}: ${errorText}` } });
+            return { error: `HTTP ${response.status}: ${errorText}` };
+        }
+
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            // If JSON parsing fails, return the text response
+            const textResult = await response.text();
+            executeActionSpan.end({ output: { result: textResult, parseError: parseError instanceof Error ? parseError.message : 'Unknown error' } });
+            return { error: 'Failed to parse JSON response', text: textResult };
+        }
 
         // Filter data if limited access
         if (config.dataAccessType === 'limited' && config.allowedFields) {
@@ -153,7 +196,18 @@ export async function createCustomActionTools(agentId: string, trace: any, ident
             description: action.whenToUse,
             parameters: z.object(parameterSchema),
             execute: async (params: any) => {
-                return await executeCustomAction(action, params, trace, identity);
+                try {
+                    console.log(`Executing custom action: ${action.name} with params:`, params);
+                    const result = await executeCustomAction(action, params, trace, identity);
+                    console.log(`Custom action result:`, result);
+                    return result;
+                } catch (error) {
+                    console.error(`Error executing custom action ${action.name}:`, error);
+                    return {
+                        error: error instanceof Error ? error.message : 'Unknown error occurred',
+                        actionName: action.name
+                    };
+                }
             },
         };
     }

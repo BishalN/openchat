@@ -85,6 +85,8 @@ export async function POST(req: Request) {
 
     // Create custom action tools with identity (if available)
     const customTools = await createCustomActionTools(agentId, trace, identity);
+    console.log('Identity:', JSON.stringify(identity, null, 2));
+    console.log('Custom tools:', Object.keys(customTools));
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
@@ -94,6 +96,17 @@ export async function POST(req: Request) {
             type: "NEW_CONVERSATION_CREATED",
             conversationId: currentConversationId,
           });
+        }
+
+        // Build system prompt with identity context if available
+        let systemPrompt = config.systemPrompt ?? SYSTEM_PROMPT_DEFAULT;
+        if (identity) {
+          systemPrompt += `\n\nUser Identity Context:
+- User ID: ${identity.user_id}
+- User Hash: ${identity.user_hash}
+- User Metadata: ${JSON.stringify(identity.user_metadata, null, 2)}
+
+Use this identity information when interacting with custom tools that require user context.`;
         }
 
         const result = streamText({
@@ -107,7 +120,7 @@ export async function POST(req: Request) {
           model: google(config.model ?? "gemini-2.0-flash"),
           messages,
           maxSteps: 10,
-          system: config.systemPrompt ?? SYSTEM_PROMPT_DEFAULT,
+          system: systemPrompt,
           temperature: config.temperature ?? 0.4,
           tools: {
             getContext: {

@@ -32,3 +32,6 @@ TODO: make this project hostable in a docker container
 
 
 Add the custom action testing, e.g subscription facility, order status for e-commerce system etc..; make it integrated with the identity system we have in place;
+
+problem with the actions in query url stuff api stuff absolute crazy
+api_url is not managed well that might be the problem, while saving it into db

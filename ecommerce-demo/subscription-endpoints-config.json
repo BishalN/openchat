@@ -1,0 +1,122 @@
+[
+    {
+        "name": "Get Subscription Status",
+        "whenToUse": "When you need to check the current subscription status and plan details for a user",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/subscriptions/status",
+            "headers": [
+                {
+                    "key": "x-user-id",
+                    "value": "{{userId}}"
+                }
+            ],
+            "apiMethod": "GET",
+            "dataInputs": [
+                {
+                    "name": "userId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The user ID to check subscription status for"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Upgrade Subscription Plan",
+        "whenToUse": "When you need to upgrade a user's subscription plan to a higher tier",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/subscriptions/upgrade",
+            "headers": [
+                {
+                    "key": "x-user-id",
+                    "value": "{{userId}}"
+                },
+                {
+                    "key": "x-plan",
+                    "value": "{{plan}}"
+                }
+            ],
+            "apiMethod": "POST",
+            "dataInputs": [
+                {
+                    "name": "userId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The user ID to upgrade the subscription for"
+                },
+                {
+                    "name": "plan",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The new plan to upgrade to (free, premium, or enterprise)"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Cancel Subscription",
+        "whenToUse": "When you need to cancel a user's subscription",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/subscriptions/cancel",
+            "headers": [
+                {
+                    "key": "x-user-id",
+                    "value": "{{userId}}"
+                },
+                {
+                    "key": "x-cancel-reason",
+                    "value": "{{cancelReason}}"
+                }
+            ],
+            "apiMethod": "POST",
+            "dataInputs": [
+                {
+                    "name": "userId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The user ID to cancel the subscription for"
+                },
+                {
+                    "name": "cancelReason",
+                    "type": "Text",
+                    "array": false,
+                    "description": "Optional reason for cancellation"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Get Billing History",
+        "whenToUse": "When you need to retrieve the billing history and payment records for a user",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/subscriptions/billing",
+            "headers": [
+                {
+                    "key": "x-user-id",
+                    "value": "{{userId}}"
+                }
+            ],
+            "apiMethod": "GET",
+            "dataInputs": [
+                {
+                    "name": "userId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The user ID to get billing history for"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    }
+]

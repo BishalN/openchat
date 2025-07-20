@@ -13,7 +13,7 @@
     "ingest": "npx inngest-cli@latest dev --no-poll",
     "be": "__NEXT_TEST_MODE=true pnpm build",
     "pkit:add": "node ./add-prompt-kit-component.js",
-    "verify-identity": "npx tsx ./verify-identity-script.ts",
+    "vi": "npx tsx ./verify-identity-script.ts",
     "db:types": "npx supabase gen types typescript --project-id qwdgjawkvdmtyyzdozhf --schema public > database.types.ts",
     "test": "vitest tests/unit",
     "pretest:e2e:run": "pnpm run build",

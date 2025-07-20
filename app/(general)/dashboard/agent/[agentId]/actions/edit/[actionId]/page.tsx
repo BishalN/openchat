@@ -45,6 +45,7 @@ export default function EditCustomActionPage() {
     const actionId = params.actionId as string;
 
     const { action, isLoading, error } = useCustomAction(actionId);
+    console.log(JSON.stringify(action, null, 2));
 
 
 

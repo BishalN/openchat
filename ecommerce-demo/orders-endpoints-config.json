@@ -1,0 +1,147 @@
+[
+    {
+        "name": "Get Order Status",
+        "whenToUse": "When you need to check the current status and tracking information for a specific order",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/orders/status",
+            "headers": [
+                {
+                    "key": "x-order-id",
+                    "value": "{{orderId}}"
+                }
+            ],
+            "apiMethod": "GET",
+            "dataInputs": [
+                {
+                    "name": "orderId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The order ID to check status for"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Get Order History",
+        "whenToUse": "When you need to retrieve the complete order history for a user",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/orders/history",
+            "headers": [
+                {
+                    "key": "x-user-id",
+                    "value": "{{userId}}"
+                }
+            ],
+            "apiMethod": "GET",
+            "dataInputs": [
+                {
+                    "name": "userId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The user ID to get order history for"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Get Order Details",
+        "whenToUse": "When you need to retrieve complete details and items for a specific order",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/orders/details",
+            "headers": [
+                {
+                    "key": "x-order-id",
+                    "value": "{{orderId}}"
+                }
+            ],
+            "apiMethod": "GET",
+            "dataInputs": [
+                {
+                    "name": "orderId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The order ID to get details for"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Cancel Order",
+        "whenToUse": "When you need to cancel an order that hasn't been shipped yet",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/orders/cancel",
+            "headers": [
+                {
+                    "key": "x-order-id",
+                    "value": "{{orderId}}"
+                },
+                {
+                    "key": "x-cancel-reason",
+                    "value": "{{cancelReason}}"
+                }
+            ],
+            "apiMethod": "POST",
+            "dataInputs": [
+                {
+                    "name": "orderId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The order ID to cancel"
+                },
+                {
+                    "name": "cancelReason",
+                    "type": "Text",
+                    "array": false,
+                    "description": "Optional reason for cancellation"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    },
+    {
+        "name": "Request Refund",
+        "whenToUse": "When you need to request a refund for a delivered order",
+        "config": {
+            "body": [],
+            "apiUrl": "http://localhost:3001/api/orders/refund",
+            "headers": [
+                {
+                    "key": "x-order-id",
+                    "value": "{{orderId}}"
+                },
+                {
+                    "key": "x-refund-reason",
+                    "value": "{{refundReason}}"
+                }
+            ],
+            "apiMethod": "POST",
+            "dataInputs": [
+                {
+                    "name": "orderId",
+                    "type": "Text",
+                    "array": false,
+                    "description": "The order ID to request refund for"
+                },
+                {
+                    "name": "refundReason",
+                    "type": "Text",
+                    "array": false,
+                    "description": "Optional reason for refund request"
+                }
+            ],
+            "parameters": [],
+            "dataAccessType": "full"
+        }
+    }
+]
