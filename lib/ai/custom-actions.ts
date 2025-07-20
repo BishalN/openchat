@@ -20,10 +20,10 @@ function sanitizeActionName(name: string): string {
 }
 
 // Helper function to execute custom actions
-export async function executeCustomAction(action: any, parameters: any, trace: any) {
+export async function executeCustomAction(action: any, parameters: any, trace: any, identity?: any) {
     const executeActionSpan = trace.span({
         name: "execute-custom-action",
-        input: { actionId: action.id, parameters },
+        input: { actionId: action.id, parameters, hasIdentity: !!identity },
     });
 
     try {
@@ -46,6 +46,15 @@ export async function executeCustomAction(action: any, parameters: any, trace: a
         config.headers.forEach((header: any) => {
             headers[header.key] = header.value;
         });
+
+        // Add identity headers if available
+        if (identity) {
+            headers['x-user-id'] = identity.user_id;
+            headers['x-user-hash'] = identity.user_hash;
+            if (identity.user_metadata) {
+                headers['x-user-metadata'] = JSON.stringify(identity.user_metadata);
+            }
+        }
 
         let body = undefined;
         if (config.apiMethod !== 'GET' && config.body.length > 0) {
@@ -87,10 +96,10 @@ export async function executeCustomAction(action: any, parameters: any, trace: a
 }
 
 // Helper function to create dynamic tools from custom actions
-export async function createCustomActionTools(agentId: string, trace: any) {
+export async function createCustomActionTools(agentId: string, trace: any, identity?: any) {
     const getCustomActionsSpan = trace.span({
         name: "get-custom-actions",
-        input: { agentId },
+        input: { agentId, hasIdentity: !!identity },
     });
 
     const customActions = await db.query.customActionsTable.findMany({
@@ -144,7 +153,7 @@ export async function createCustomActionTools(agentId: string, trace: any) {
             description: action.whenToUse,
             parameters: z.object(parameterSchema),
             execute: async (params: any) => {
-                return await executeCustomAction(action, params, trace);
+                return await executeCustomAction(action, params, trace, identity);
             },
         };
     }

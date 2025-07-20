@@ -83,8 +83,8 @@ export async function POST(req: Request) {
       name: "chat",
     });
 
-    // Create custom action tools
-    const customTools = await createCustomActionTools(agentId, trace);
+    // Create custom action tools with identity (if available)
+    const customTools = await createCustomActionTools(agentId, trace, identity);
 
     return createDataStreamResponse({
       execute: async (dataStream) => {
