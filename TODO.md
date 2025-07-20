@@ -29,3 +29,6 @@ TODO: create a presentation, full rundown of all features, should work flawlessl
 TODO: create project report
 
 TODO: make this project hostable in a docker container
+
+
+Add the custom action testing, e.g subscription facility, order status for e-commerce system etc..; make it integrated with the identity system we have in place;
