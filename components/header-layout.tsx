@@ -10,7 +10,7 @@ export function Header() {
           <div className="bg-black text-white rounded-md w-8 h-8 flex items-center justify-center">
             <Code className="h-5 w-5" />
           </div>
-          <span className="font-bold text-xl">OpenChat</span>
+          <span className="font-bold text-xl">ChatBuddy</span>
         </div>
         <nav className="hidden md:flex items-center gap-8">
           <Link

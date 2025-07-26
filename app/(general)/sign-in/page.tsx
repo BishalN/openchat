@@ -21,7 +21,7 @@ export default async function Login() {
           href="/"
           className="flex items-center gap-2 self-center font-medium"
         >
-          <span className="text-2xl font-bold">OpenChat</span>
+          <span className="text-2xl font-bold">ChatBuddy</span>
         </NextLink>
         <Card>
           <CardHeader className="text-center">

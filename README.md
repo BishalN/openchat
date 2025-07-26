@@ -1,8 +1,8 @@
-# OpenChat
+# ChatBuddy
 
-OpenChat is an open-source platform for creating, training, and managing AI agents or chatbots using various data sources. It includes user authentication, subscription management via Stripe, and a type-safe API built with tRPC.
+ChatBuddy is an open-source platform for creating, training, and managing AI agents or chatbots using various data sources. It includes user authentication, subscription management via Stripe, and a type-safe API built with tRPC.
 
-![OpenChat](https://openchatsbase.vercel.app/)
+![ChatBuddy](https://ChatBuddysbase.vercel.app/)
 
 ## Features
 

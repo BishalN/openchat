@@ -4,9 +4,9 @@
 
 The rapid advancement of artificial intelligence has revolutionized how organizations interact with users through chatbots and AI agents. However, current AI chatbot platforms are predominantly proprietary solutions with significant limitations including vendor lock-in, data privacy concerns, and limited customization capabilities.
 
-OpenChat emerges as a comprehensive open-source alternative to existing proprietary AI agent platforms. The system enables users to create, train, and deploy custom AI chatbots using various data sources including text documents, files, websites, Q&A pairs, and Notion integrations. Built with modern web technologies and leveraging state-of-the-art AI models, OpenChat offers a robust, scalable, and customizable platform for building intelligent conversational agents.
+ChatBuddy emerges as a comprehensive open-source alternative to existing proprietary AI agent platforms. The system enables users to create, train, and deploy custom AI chatbots using various data sources including text documents, files, websites, Q&A pairs, and Notion integrations. Built with modern web technologies and leveraging state-of-the-art AI models, ChatBuddy offers a robust, scalable, and customizable platform for building intelligent conversational agents.
 
-The motivation behind developing OpenChat stems from the growing need for transparent, customizable, and privacy-focused AI solutions. Many organizations face challenges with existing platforms that restrict data access, limit customization options, and impose significant costs for advanced features. OpenChat addresses these pain points by providing a complete open-source solution that gives users full control over their data, deployment options, and customization capabilities.
+The motivation behind developing ChatBuddy stems from the growing need for transparent, customizable, and privacy-focused AI solutions. Many organizations face challenges with existing platforms that restrict data access, limit customization options, and impose significant costs for advanced features. ChatBuddy addresses these pain points by providing a complete open-source solution that gives users full control over their data, deployment options, and customization capabilities.
 
 ## 1.2 Problem Statement
 
@@ -133,7 +133,7 @@ The project follows an iterative and incremental development methodology combini
 
 ## 1.6 Report Organization
 
-This report provides a comprehensive understanding of the OpenChat project from conception through implementation and evaluation.
+This report provides a comprehensive understanding of the ChatBuddy project from conception through implementation and evaluation.
 
 ### Chapter Overview
 

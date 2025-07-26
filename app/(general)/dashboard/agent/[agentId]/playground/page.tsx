@@ -352,7 +352,7 @@ export default function PlaygroundPage() {
               </Button>
               <div className="absolute right-10 left-0 bottom-0 flex justify-center mt-3 p-2">
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <span>Powered By OpenChat.co</span>
+                  <span>Powered By ChatBuddy.co</span>
                 </div>
               </div>
             </form>
