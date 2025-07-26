@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCustomAction, useCustomActions } from "@/hooks/use-custom-actions";
 import { extractQueryParameters, getBaseUrl, buildUrlWithParams } from "@/lib/utils";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { GeneralSection, ApiSection, TestResponseSection, DataAccessSection } from "../../create/page";
@@ -39,15 +39,11 @@ function EditCustomActionSkeleton() {
 }
 
 export default function EditCustomActionPage() {
-    const router = useRouter();
     const params = useParams();
     const agentId = params.agentId as string;
     const actionId = params.actionId as string;
 
     const { action, isLoading, error } = useCustomAction(actionId);
-    console.log(JSON.stringify(action, null, 2));
-
-
 
     // Use the custom actions hook
     const { updateAction, isUpdating } = useCustomActions(agentId);
@@ -57,6 +53,20 @@ export default function EditCustomActionPage() {
     // Form state
     const [actionName, setActionName] = useState(action?.name || "");
     const [whenToUse, setWhenToUse] = useState(action?.whenToUse || "");
+
+    // useEffect to set the action name and when to use
+    useEffect(() => {
+        setActionName(action?.name || "");
+        setWhenToUse(action?.whenToUse || "");
+
+        // also set the data inputs, api method, api url, parameters, headers, body, data access type, and allowed fields
+        setDataInputs(action?.config.dataInputs || []);
+        setApiMethod(action?.config.apiMethod || "GET");
+        setApiUrl(action?.config.apiUrl || "");
+        setParameters(action?.config.parameters || []);
+        setHeaders(action?.config.headers || []);
+        setBody(action?.config.body || []);
+    }, [action]);
 
     // Data input table state
     const [dataInputs, setDataInputs] = useState<Array<{ name: string; type: "Text" | "Number" | "Boolean" | "Date"; description: string; array: boolean }>>(action?.config.dataInputs || []);
