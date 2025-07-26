@@ -4,13 +4,7 @@
     "description": "Demo e-commerce platform for custom actions integration",
     "main": "api/index.ts",
     "scripts": {
-        "dev": "concurrently \"npm run dev:api\" \"npm run dev:frontend\"",
-        "dev:api": "tsx watch api/index.ts",
-        "dev:frontend": "cd frontend && npm run dev",
-        "build": "npm run build:api && npm run build:frontend",
-        "build:api": "tsc api/index.ts --outDir dist",
-        "build:frontend": "cd frontend && npm run build",
-        "start": "node dist/index.js"
+        "dev": "tsx watch api/index.ts"
     },
     "dependencies": {
         "hono": "^3.12.0",

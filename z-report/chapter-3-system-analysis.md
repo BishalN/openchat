@@ -54,12 +54,10 @@ graph TB
             Google[Google OAuth]
             Gemini[Gemini AI API]
             Supabase[Supabase Database]
-            Vercel[Vercel Hosting]
         end
         
         subgraph "Primary Actors"
             User((User))
-            Admin((Admin))
         end
         
         subgraph "System Use Cases"
@@ -96,7 +94,6 @@ graph TB
         Supabase --> UC2
         Supabase --> UC4
         Supabase --> UC6
-        Vercel --> UC12
     end
 ```
 

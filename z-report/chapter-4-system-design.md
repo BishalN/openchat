@@ -85,7 +85,7 @@ erDiagram
     
     AGENT_CHAT_INTERFACE_CONFIGS {
         uuid id PK
-        uuid agent_id FK UK
+        uuid agent_id FK
         jsonb config
         timestamp created_at
         timestamp updated_at
@@ -101,251 +101,104 @@ erDiagram
     AGENTS ||--|| AGENT_CHAT_INTERFACE_CONFIGS : "has_config"
 ```
 
-**Source Types and Details ER Diagram**
-
-```mermaid
-erDiagram
-    SOURCES {
-        uuid id PK
-        uuid agent_id FK
-        enum type
-        text name
-        jsonb details
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    FILE_SOURCE_DETAILS {
-        text fileUrl
-        number fileSize
-        text mimeType
-        number characterCount
-    }
-    
-    TEXT_SOURCE_DETAILS {
-        text content
-    }
-    
-    WEBSITE_SOURCE_DETAILS {
-        text url
-        text title
-        text content
-    }
-    
-    QA_SOURCE_DETAILS {
-        array pairs
-    }
-    
-    SOURCES ||--o| FILE_SOURCE_DETAILS : "file_type"
-    SOURCES ||--o| TEXT_SOURCE_DETAILS : "text_type"
-    SOURCES ||--o| WEBSITE_SOURCE_DETAILS : "website_type"
-    SOURCES ||--o| QA_SOURCE_DETAILS : "qa_type"
-```
-
-**Custom Action Configuration ER Diagram**
-
-```mermaid
-erDiagram
-    CUSTOM_ACTIONS {
-        uuid id PK
-        uuid agent_id FK
-        text name
-        text when_to_use
-        jsonb config
-        boolean is_active
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    CUSTOM_ACTION_CONFIG {
-        array dataInputs
-        enum apiMethod
-        text apiUrl
-        array parameters
-        array headers
-        array body
-        enum dataAccessType
-        array allowedFields
-        text exampleResponse
-    }
-    
-    DATA_INPUT {
-        text name
-        enum type
-        text description
-        boolean array
-    }
-    
-    KEY_VALUE_PAIR {
-        text key
-        text value
-    }
-    
-    CUSTOM_ACTIONS ||--|| CUSTOM_ACTION_CONFIG : "has_config"
-    CUSTOM_ACTION_CONFIG ||--o{ DATA_INPUT : "contains"
-    CUSTOM_ACTION_CONFIG ||--o{ KEY_VALUE_PAIR : "parameters"
-    CUSTOM_ACTION_CONFIG ||--o{ KEY_VALUE_PAIR : "headers"
-    CUSTOM_ACTION_CONFIG ||--o{ KEY_VALUE_PAIR : "body"
-```
-
-**Agent Configuration and Chat Interface ER Diagram**
-
-```mermaid
-erDiagram
-    AGENTS {
-        uuid id PK
-        text name
-        text description
-        text secret_key
-        uuid user_id FK
-        boolean is_public
-        jsonb config
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    AGENT_CONFIG {
-        number temperature
-        text model
-        text systemPrompt
-    }
-    
-    AGENT_CHAT_INTERFACE_CONFIGS {
-        uuid id PK
-        uuid agent_id FK UK
-        jsonb config
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    CHAT_INTERFACE_CONFIG {
-        text displayName
-        text profilePicture
-        text chatBubbleTriggerIcon
-        text userMessageColor
-        boolean syncUserMessageColorWithAgentHeader
-        text chatBubbleButtonColor
-        text initialMessages
-        array suggestedMessages
-        text messagePlaceholder
-        text footer
-        text dismissibleNotice
-    }
-    
-    AGENTS ||--|| AGENT_CONFIG : "has_config"
-    AGENTS ||--|| AGENT_CHAT_INTERFACE_CONFIGS : "has_interface"
-    AGENT_CHAT_INTERFACE_CONFIGS ||--|| CHAT_INTERFACE_CONFIG : "contains"
-```
-
-**Conversation and Message Flow ER Diagram**
-
-```mermaid
-erDiagram
-    CONVERSATIONS {
-        uuid id PK
-        uuid agent_id FK
-        uuid user_id FK
-        jsonb identity
-        text title
-        timestamp created_at
-        timestamp updated_at
-    }
-    
-    MESSAGES {
-        uuid id PK
-        uuid conversation_id FK
-        varchar role
-        jsonb parts
-        integer order
-        timestamp created_at
-    }
-    
-    IDENTITY {
-        text user_id
-        text user_hash
-        jsonb user_metadata
-    }
-    
-    MESSAGE_PART {
-        text type
-        text content
-        jsonb metadata
-    }
-    
-    CONVERSATIONS ||--o{ MESSAGES : "contains"
-    CONVERSATIONS ||--|| IDENTITY : "has_identity"
-    MESSAGES ||--o{ MESSAGE_PART : "contains_parts"
-```
-
 #### Sequence Diagrams
 
-**Agent Creation and Training Sequence**
-```
-User -> Frontend: Create Agent
-Frontend -> tRPC: createAgent(agentData)
-tRPC -> Database: Insert Agent
-Database -> tRPC: Agent Created
-tRPC -> Frontend: Agent Response
-Frontend -> User: Agent Created
+**Agent Creation and Configuration Sequence**
 
-User -> Frontend: Add Sources
-Frontend -> tRPC: addSource(sourceData)
-tRPC -> FileProcessor: Process Files
-FileProcessor -> TextSplitter: Split Content
-TextSplitter -> EmbeddingService: Generate Embeddings
-EmbeddingService -> Database: Store Embeddings
-tRPC -> Frontend: Sources Added
-Frontend -> User: Training Complete
-```
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant A as API
+    participant D as Database
+    participant E as Embedding Service
 
-**Chat Interaction Sequence**
-```
-User -> ChatInterface: Send Message
-ChatInterface -> tRPC: sendMessage(message)
-tRPC -> ConversationService: Add Message
-ConversationService -> Database: Store Message
-tRPC -> AIProcessor: Process with Context
-AIProcessor -> EmbeddingService: Find Relevant Context
-EmbeddingService -> Database: Query Embeddings
-AIProcessor -> GeminiAPI: Generate Response
-GeminiAPI -> AIProcessor: Response
-AIProcessor -> tRPC: Formatted Response
-tRPC -> ConversationService: Add AI Message
-ConversationService -> Database: Store AI Message
-tRPC -> ChatInterface: Response
-ChatInterface -> User: Display Response
-```
+    U->>F: Create new agent
+    F->>A: POST /api/agents
+    A->>D: Insert agent record
+    D-->>A: Agent created
+    A-->>F: Agent data
+    F-->>U: Agent created successfully
 
-#### Activity Diagrams
-
-**Agent Creation Workflow**
-```
-[Start] -> [User Authentication]
-[User Authentication] -> [Agent Configuration]
-[Agent Configuration] -> [Source Addition]
-[Source Addition] -> [File Processing] (Parallel)
-[Source Addition] -> [Text Processing] (Parallel)
-[Source Addition] -> [Website Scraping] (Parallel)
-[File Processing] -> [Text Extraction]
-[Text Extraction] -> [Content Chunking]
-[Content Chunking] -> [Embedding Generation]
-[Embedding Generation] -> [Database Storage]
-[Database Storage] -> [Training Completion]
-[Training Completion] -> [Agent Ready]
-[Agent Ready] -> [End]
+    U->>F: Add source (file/text/website)
+    F->>A: POST /api/agents/{id}/sources
+    A->>D: Insert source record
+    D-->>A: Source created
+    
+    alt File source
+        A->>E: Process file content
+        E->>A: Generate embeddings
+        A->>D: Store embeddings
+    else Text source
+        A->>E: Process text content
+        E->>A: Generate embeddings
+        A->>D: Store embeddings
+    else Website source
+        A->>E: Scrape website
+        E->>A: Generate embeddings
+        A->>D: Store embeddings
+    end
+    
+    A-->>F: Source processed
+    F-->>U: Source added successfully
 ```
 
-**Custom Action Execution Workflow**
+**Chat Conversation Sequence**
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant A as API
+    participant D as Database
+    participant AI as AI Service
+    participant CA as Custom Actions
+
+    U->>F: Send message
+    F->>A: POST /api/chat
+    A->>D: Create/retrieve conversation
+    A->>D: Store user message
+    
+    A->>D: Retrieve agent config
+    A->>D: Retrieve relevant embeddings
+    A->>D: Check custom actions
+    
+    alt Custom action triggered
+        A->>CA: Execute custom action
+        CA-->>A: Action result
+    end
+    
+    A->>AI: Generate response with context
+    AI-->>A: AI response
+    A->>D: Store AI message
+    A-->>F: Response data
+    F-->>U: Display response
 ```
-[Start] -> [Action Trigger]
-[Action Trigger] -> [Input Validation]
-[Input Validation] -> [API Request Preparation]
-[API Request Preparation] -> [External API Call]
-[External API Call] -> [Response Processing]
-[Response Processing] -> [Data Filtering] (if limited access)
-[Data Filtering] -> [Response Formatting]
-[Response Formatting] -> [AI Integration]
-[AI Integration] -> [End]
+
+**Agent Training and Embedding Generation**
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant A as API
+    participant I as Inngest
+    participant E as Embedding Service
+    participant D as Database
+
+    U->>F: Add source to agent
+    F->>A: POST /api/agents/{id}/sources
+    A->>D: Store source metadata
+    A->>I: Trigger training job
+    
+    I->>E: Process source content
+    E->>E: Split into chunks
+    E->>E: Generate embeddings
+    E->>D: Store embeddings
+    I->>D: Update training status
+    I->>A: Training complete
+    A-->>F: Training status update
+    F-->>U: Training complete notification
 ```
 
 ### 4.1.2 Component Diagrams
@@ -386,21 +239,6 @@ graph TB
     E --> H
 ```
 
-**Agent Component Architecture**
-
-```mermaid
-graph LR
-    subgraph "Agent System"
-        A[Agent Manager]
-        B[Training Engine]
-        C[Chat Engine]
-    end
-    
-    A --> B
-    A --> C
-    B --> C
-```
-
 ### 4.1.3 Deployment Diagrams
 
 **Production Deployment Architecture**
@@ -433,23 +271,6 @@ graph TB
     C --> E
     C --> F
     C --> G
-```
-
-**Development Environment**
-
-```mermaid
-graph LR
-    subgraph "Local Development"
-        A[Next.js Dev Server]
-        B[Supabase Local]
-    end
-    
-    subgraph "External"
-        C[Gemini API]
-    end
-    
-    A --> B
-    A --> C
 ```
 
 ## 4.2 Algorithm Details
