@@ -1,37 +1,29 @@
-So form submission error after data validation on ui;
-Check for user auth and redirect if not for dashboard page;
-Add avatar dropdown which gives options to logout, profile etc;
+# TODO List
 
-use tanstack query for client side data fetching;
+## 🐛 Bug Fixes
+- [ ] Fix form submission error after data validation
+- [ ] Fix custom action latency problem
+- [ ] Fix actions API URL management issues
+- [ ] Fix actions schema type composition and duplication
 
-all the spinners are not working for some reason; maybe cuz of the promptkit intervention, that is having its effects probably
+## 🔐 Authentication & UI
+- [ ] Add auth check and redirect for dashboard
+- [ ] Create avatar dropdown with logout/profile options
 
-fix the actions schema, to get types from both the schema and the ingest client;
-They should all be composing each other and not be so isolated from each other that we have so much duplication problems;
+## 🔄 Data Management
+- [ ] Implement TanStack Query for client-side data fetching
+- [ ] Use use-source hook for retrain agents state
 
+## 🚫 Temporary Restrictions
+- [ ] Hide sources and retrain features (too many bugs)
+- [ ] Keep hidden during showcase
 
-and probably in retrain agents also use the use-source hook for state cuz that is super simple to use
+## 🧪 Testing & Integration
+- [ ] Test custom actions with user identity
+- [ ] Add subscription/order status testing
+- [ ] Integrate custom actions with identity system
 
-
-
-## Make the sources and retrain part in-accessible for now cuz there are too many bugs there
-### during showcase just don't show those things needs lots of work there;
-
-
-TODO: fix the custom action latency problem
-
-TODO: Test custom action with user identity, by doing sth like updating the user subscriptions, for this create a simple environment and verify that this works
-
-TODO: create a presentation, full rundown of all features, should work flawlessly, maybe use the slidev thing for this, it markdown format
-
-
-
-TODO: create project report
-
-TODO: make this project hostable in a docker container
-
-
-Add the custom action testing, e.g subscription facility, order status for e-commerce system etc..; make it integrated with the identity system we have in place;
-
-problem with the actions in query url stuff api stuff absolute crazy
-api_url is not managed well that might be the problem, while saving it into db
+## 📋 Documentation & Deployment
+- [ ] Create contribution guide
+- [ ] Create project report
+- [ ] Docker container setup for hosting

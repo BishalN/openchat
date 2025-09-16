@@ -1,6 +1,6 @@
 # Custom Actions Integration with LLM Tools
 
-This document explains how custom actions are integrated as tools into the LLM system in ChatBuddy.
+This document explains how custom actions are integrated as tools into the LLM system in OpenChat.
 
 ## Overview
 

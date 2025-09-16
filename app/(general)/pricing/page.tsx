@@ -43,7 +43,7 @@ export default async function PricingPage() {
               Frequently asked questions
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Everything you need to know about ChatBuddy pricing and plans.
+              Everything you need to know about OpenChat pricing and plans.
             </p>
           </div>
 

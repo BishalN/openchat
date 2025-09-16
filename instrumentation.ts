@@ -3,7 +3,7 @@ import { registerOTel } from "@vercel/otel";
 
 export function register() {
     registerOTel({
-        serviceName: "chatbuddy-ai",
+        serviceName: "OpenChat-ai",
         traceExporter: new LangfuseExporter({
             environment: process.env.NODE_ENV ?? "development",
         }),

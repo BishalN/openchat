@@ -59,7 +59,7 @@ const features = [
     icon: <Globe className="h-6 w-6 text-gray-600" />,
     title: "Deploy Anywhere",
     description:
-      "Run on your laptop, your server, or our cloud. ChatBuddy works everywhere, from development to production.",
+      "Run on your laptop, your server, or our cloud. OpenChat works everywhere, from development to production.",
   },
 ];
 
@@ -91,7 +91,7 @@ export default async function LandingPage() {
   } = await client.auth.getUser();
 
   // Fetch GitHub repository info
-  const repoInfo = await getGitHubRepoInfo("bishaln", "ChatBuddy").catch(
+  const repoInfo = await getGitHubRepoInfo("bishaln", "OpenChat").catch(
     () => null
   );
 
@@ -102,7 +102,7 @@ export default async function LandingPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Logo />
-            <span className="font-bold text-xl">ChatBuddy</span>
+            <span className="font-bold text-xl">OpenChat</span>
           </div>
           {/* <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
@@ -114,7 +114,7 @@ export default async function LandingPage() {
           <div className="flex items-center gap-4">
             <ThemeSwitcher />
             <Link
-              href="https://github.com/bishaln/ChatBuddy"
+              href="https://github.com/bishaln/OpenChat"
               className="text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
             >
               <Github className="h-5 w-5" />
@@ -156,7 +156,7 @@ export default async function LandingPage() {
                     Create your chatbot <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="https://github.com/bishaln/ChatBuddy">
+                <Link href="https://github.com/bishaln/OpenChat">
                   <Button
                     size="lg"
                     variant="outline"
@@ -185,7 +185,7 @@ export default async function LandingPage() {
                     <div className="bg-white text-black rounded-full w-8 h-8 flex items-center justify-center font-bold">
                       O
                     </div>
-                    <span className="font-medium">ChatBuddy Agent</span>
+                    <span className="font-medium">OpenChat Agent</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -197,7 +197,7 @@ export default async function LandingPage() {
                   <div className="flex-1 space-y-4 overflow-y-auto">
                     <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 max-w-[80%]">
                       <p>
-                        👋 Hi there! I'm your ChatBuddy assistant. How can I help
+                        👋 Hi there! I'm your OpenChat assistant. How can I help
                         you today?
                       </p>
                     </div>
@@ -209,12 +209,12 @@ export default async function LandingPage() {
                     </div>
                     <div className="bg-gray-800 text-white rounded-lg p-3 max-w-[80%] ml-auto">
                       <p>
-                        What makes ChatBuddy different from other AI platforms?
+                        What makes OpenChat different from other AI platforms?
                       </p>
                     </div>
                     <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 max-w-[80%]">
                       <p>
-                        Great question! ChatBuddy is 100% open-source, which
+                        Great question! OpenChat is 100% open-source, which
                         means:
                       </p>
                       <ul className="list-disc pl-5 mt-2 space-y-1">
@@ -249,7 +249,7 @@ export default async function LandingPage() {
       <section className="py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold mb-4">Why choose ChatBuddy?</h2>
+            <h2 className="text-3xl font-bold mb-4">Why choose OpenChat?</h2>
             <p className="text-xl text-gray-600 dark:text-gray-300">
               Build powerful AI agents without compromising on ownership,
               privacy, or flexibility.
@@ -277,7 +277,7 @@ export default async function LandingPage() {
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-4">
                   <Github className="h-6 w-6" />
-                  <h3 className="text-xl font-bold">bishaln/ChatBuddy</h3>
+                  <h3 className="text-xl font-bold">bishaln/OpenChat</h3>
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
                   {repoInfo?.description ||
@@ -346,7 +346,7 @@ export default async function LandingPage() {
                     AI
                   </div>
                 </div>
-                <Link href="https://github.com/bishaln/ChatBuddy">
+                <Link href="https://github.com/bishaln/OpenChat">
                   <Button className="w-full">View on GitHub</Button>
                 </Link>
               </div>
@@ -354,7 +354,7 @@ export default async function LandingPage() {
             <div className="space-y-6">
               <h2 className="text-3xl font-bold">Open Source at Heart</h2>
               <p className="text-xl text-gray-600 dark:text-gray-300">
-                ChatBuddy is built in the open, for the community, by the
+                OpenChat is built in the open, for the community, by the
                 community. We believe AI should be accessible to everyone, not
                 locked behind proprietary walls.
               </p>
@@ -379,7 +379,7 @@ export default async function LandingPage() {
                     <h3 className="font-medium">Active Community</h3>
                     <p className="text-gray-600 dark:text-gray-300">
                       Join thousands of developers building and improving
-                      ChatBuddy together.
+                      OpenChat together.
                     </p>
                   </div>
                 </li>
@@ -441,7 +441,7 @@ export default async function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Logo />
-                <span className="font-bold text-white text-xl">ChatBuddy</span>
+                <span className="font-bold text-white text-xl">OpenChat</span>
               </div>
               <p className="text-gray-400 mb-4">
                 The open-source AI agent platform for everyone.
@@ -488,7 +488,7 @@ export default async function LandingPage() {
             ))} */}
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} ChatBuddy. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} OpenChat. All rights reserved.</p>
           </div>
         </div>
       </footer>

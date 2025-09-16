@@ -56,7 +56,7 @@ export function Footer() {
               <div className="bg-white text-black rounded-md w-8 h-8 flex items-center justify-center">
                 <Code className="h-5 w-5" />
               </div>
-              <span className="font-bold text-white text-xl">ChatBuddy</span>
+              <span className="font-bold text-white text-xl">OpenChat</span>
             </div>
             <p className="text-gray-400 mb-4">
               The open-source AI agent platform for everyone.
@@ -71,7 +71,7 @@ export function Footer() {
           ))}
         </div>
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} ChatBuddy. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} OpenChat. All rights reserved.</p>
         </div>
       </div>
     </footer>

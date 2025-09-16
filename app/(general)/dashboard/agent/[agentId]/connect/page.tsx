@@ -310,7 +310,7 @@ const iframeSrc = \
               <div className="mb-2 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded p-2">
                 <b>Keep your secret key safe!</b> Never commit it directly to your repository, client-side code, or anywhere a third party can find it.
               </div>
-              <div className="mb-2 text-sm">You'll need to generate an HMAC on your server for each logged-in user and send it to Chatbuddy.</div>
+              <div className="mb-2 text-sm">You'll need to generate an HMAC on your server for each logged-in user and send it to OpenChat.</div>
               <div className="relative mb-4">
                 <pre className="bg-muted/50 rounded-md p-4 font-mono text-sm overflow-auto whitespace-pre-wrap">{codeSample}</pre>
                 <Button size="icon" variant="ghost" onClick={copyCode} className="absolute top-2 right-2" title="Copy code sample">
