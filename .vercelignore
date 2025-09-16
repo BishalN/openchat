@@ -1,0 +1,8 @@
+# Ignore ecommerce-demo directory from Vercel builds
+ecommerce-demo/
+
+# Ignore other development/testing directories
+test-results/
+playwright-report/
+playwright/
+tests/
