@@ -36,9 +36,6 @@ export function useAgentQuery(agentId: string) {
           agent.config.temperature ?? DEFAULT_AGENT_CONFIG.temperature,
         systemPrompt:
           agent.config.systemPrompt || DEFAULT_AGENT_CONFIG.systemPrompt,
-        instructions:
-          agent.config.instructions || DEFAULT_AGENT_CONFIG.instructions,
-        maxTokens: agent.config.maxTokens,
       };
       setInitialConfig(normalizedConfig);
     }

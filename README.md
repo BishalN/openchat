@@ -30,5 +30,5 @@ OpenChat is an open-source platform for creating, training, and managing AI agen
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [Shadcn/UI](https://ui.shadcn.com/)
 - **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
-- **AI/LLM**: [Langchain](https://js.langchain.com/), [Vercel AI SDK](https://sdk.vercel.ai/)
+- **AI/LLM**: [Vercel AI SDK](https://sdk.vercel.ai/), [Langfuse](https://langfuse.com/)
 - **Package Manager**: [pnpm](https://pnpm.io/)

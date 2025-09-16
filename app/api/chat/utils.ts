@@ -1,11 +1,9 @@
 import { db } from "@/drizzle";
 import {
   conversationsTable,
-  messagesTable,
-  profilesTable,
 } from "@/drizzle/schema";
 import { google } from "@ai-sdk/google";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
@@ -102,17 +100,4 @@ export async function handleConversation(
     .returning();
 
   return newConversation.id.toString();
-}
-
-export async function storeMessage(
-  conversationId: string,
-  role: string,
-  content: string
-) {
-  await db.insert(messagesTable).values({
-    conversationId: conversationId,
-    role: role as "user" | "assistant" | "system",
-    content,
-    createdAt: new Date(),
-  });
 }

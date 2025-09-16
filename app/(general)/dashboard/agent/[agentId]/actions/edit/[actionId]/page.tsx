@@ -8,7 +8,10 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { GeneralSection, ApiSection, TestResponseSection, DataAccessSection } from "../../create/page";
+import { GeneralSection } from "../../create/general-section";
+import { ApiSection } from "../../create/api-section";
+import { TestResponseSection } from "../../create/test-response-section";
+import { DataAccessSection } from "../../create/data-access-section";
 
 // Skeleton component for the edit page
 function EditCustomActionSkeleton() {

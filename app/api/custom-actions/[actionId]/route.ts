@@ -6,7 +6,7 @@ import { db } from "@/drizzle";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { actionId: string } }
+    { params }: { params: Promise<{ actionId: string }> }
 ) {
     try {
         const supabase = await createClient();
@@ -16,7 +16,7 @@ export async function GET(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { actionId } = params;
+        const { actionId } = await params;
 
         // Get the custom action and verify ownership
         const [action] = await db
@@ -56,7 +56,7 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { actionId: string } }
+    { params }: { params: Promise<{ actionId: string }> }
 ) {
     try {
         const supabase = await createClient();
@@ -66,7 +66,7 @@ export async function PUT(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { actionId } = params;
+        const { actionId } = await params;
         const body = await request.json();
         const {
             name,
@@ -133,7 +133,7 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { actionId: string } }
+    { params }: { params: Promise<{ actionId: string }> }
 ) {
     try {
         const supabase = await createClient();
@@ -143,7 +143,7 @@ export async function DELETE(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { actionId } = params;
+        const { actionId } = await params;
 
         // Get the existing action and verify ownership
         const [existingAction] = await db
