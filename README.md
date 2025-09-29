@@ -2,7 +2,9 @@
 
 OpenChat is an open-source platform for creating, training, and managing AI agents or chatbots using various data sources. It includes user authentication and a type-safe API built with tRPC.
 
-![OpenChat](https://OpenChatsbase.vercel.app/)
+
+[![Watch the demo video](https://img.youtube.com/vi/jRpB2sN2N-M/0.jpg)](https://www.youtube.com/watch?v=jRpB2sN2N-M)
+
 
 ## Features
 
